@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Admin - Estacionamiento</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="dashboard">
+    <!-- Navbar -->
+    <nav class="navbar">
+      <h1>🅿️ Panel de Administración</h1>
+      <div class="user-info">
+        <span id="nombreUsuario">Cargando...</span>
+        <button class="btn btn-danger btn-sm" id="btnLogout">Cerrar Sesión</button>
+      </div>
+    </nav>
+
+    <!-- Contenido -->
+    <div class="main-content">
+      <!-- Stats generales -->
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card">
+          <div class="label">Total Sesiones</div>
+          <div class="value" id="totalSesiones">-</div>
+        </div>
+        <div class="stat-card success">
+          <div class="label">Pagadas</div>
+          <div class="value" id="pagadas">-</div>
+        </div>
+        <div class="stat-card warning">
+          <div class="label">Pendientes</div>
+          <div class="value" id="pendientes">-</div>
+        </div>
+        <div class="stat-card primary">
+          <div class="label">Ingresos Totales</div>
+          <div class="value" id="ingresos">-</div>
+        </div>
+      </div>
+
+      <!-- Métricas por turno -->
+      <div class="card">
+        <h2>Métricas por Turno</h2>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Turno</th>
+                <th>Sesiones</th>
+                <th>Ingresos</th>
+              </tr>
+            </thead>
+            <tbody id="turnosBody">
+              <tr><td colspan="3" class="loading">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Espacios (vista solo lectura) -->
+      <div class="card">
+        <h2>Estado Actual de Espacios</h2>
+        <div id="espaciosGrid" class="espacios-grid">
+          <div class="loading">Cargando espacios...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

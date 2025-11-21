@@ -1,0 +1,358 @@
+/* ============ Variables ============ */
+:root {
+    --primary: #3b82f6;
+    --primary-dark: #2563eb;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-600: #4b5563;
+    --gray-800: #1f2937;
+  }
+  
+  /* ============ Reset ============ */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--gray-100);
+    color: var(--gray-800);
+    min-height: 100vh;
+  }
+  
+  /* ============ Login ============ */
+  .login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 1rem;
+  }
+  
+  .login-box {
+    background: white;
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 400px;
+  }
+  
+  .login-box h1 {
+    text-align: center;
+    margin-bottom: 0.5rem;
+    color: var(--gray-800);
+  }
+  
+  .login-box .subtitle {
+    text-align: center;
+    color: var(--gray-600);
+    margin-bottom: 2rem;
+  }
+  
+  /* ============ Forms ============ */
+  .form-group {
+    margin-bottom: 1.25rem;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--gray-600);
+  }
+  
+  .form-group input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  
+  .form-group input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+  }
+  
+  /* ============ Buttons ============ */
+  .btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+  
+  .btn:active {
+    transform: scale(0.98);
+  }
+  
+  .btn-primary {
+    background: var(--primary);
+    color: white;
+    width: 100%;
+  }
+  
+  .btn-primary:hover {
+    background: var(--primary-dark);
+  }
+  
+  .btn-success {
+    background: var(--success);
+    color: white;
+  }
+  
+  .btn-success:hover {
+    background: #16a34a;
+  }
+  
+  .btn-danger {
+    background: var(--danger);
+    color: white;
+  }
+  
+  .btn-danger:hover {
+    background: #dc2626;
+  }
+  
+  .btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+  
+  /* ============ Dashboard Layout ============ */
+  .dashboard {
+    min-height: 100vh;
+  }
+  
+  .navbar {
+    background: white;
+    padding: 1rem 2rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .navbar h1 {
+    font-size: 1.25rem;
+    color: var(--gray-800);
+  }
+  
+  .navbar .user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .navbar .user-info span {
+    color: var(--gray-600);
+  }
+  
+  .main-content {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  /* ============ Cards ============ */
+  .card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .card h2 {
+    margin-bottom: 1rem;
+    color: var(--gray-800);
+    font-size: 1.25rem;
+  }
+  
+  /* ============ Espacios Grid ============ */
+  .espacios-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 1rem;
+  }
+  
+  .espacio {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  
+  .espacio:hover {
+    transform: scale(1.05);
+  }
+  
+  .espacio.disponible {
+    background: #dcfce7;
+    color: #166534;
+    border: 2px solid #22c55e;
+  }
+  
+  .espacio.ocupado {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 2px solid #ef4444;
+  }
+  
+  .espacio .numero {
+    font-size: 1.5rem;
+  }
+  
+  .espacio .estado {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+  }
+  
+  /* ============ Tables ============ */
+  .table-container {
+    overflow-x: auto;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  th, td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  
+  th {
+    background: var(--gray-50);
+    font-weight: 600;
+    color: var(--gray-600);
+  }
+  
+  tr:hover {
+    background: var(--gray-50);
+  }
+  
+  /* ============ Stats Grid ============ */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  
+  .stat-card .label {
+    color: var(--gray-600);
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .stat-card .value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--gray-800);
+  }
+  
+  .stat-card.primary .value { color: var(--primary); }
+  .stat-card.success .value { color: var(--success); }
+  .stat-card.warning .value { color: var(--warning); }
+  
+  /* ============ Alerts ============ */
+  .alert {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+  
+  .alert-error {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+  }
+  
+  .alert-success {
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+  }
+  
+  /* ============ Modal ============ */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    display: none;
+  }
+  
+  .modal-overlay.active {
+    display: flex;
+  }
+  
+  .modal {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+  }
+  
+  .modal h3 {
+    margin-bottom: 1rem;
+  }
+  
+  .modal-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  
+  .modal-actions .btn {
+    flex: 1;
+  }
+  
+  /* ============ Empty State ============ */
+  .empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--gray-600);
+  }
+  
+  /* ============ Loading ============ */
+  .loading {
+    text-align: center;
+    padding: 2rem;
+    color: var(--gray-600);
+  }

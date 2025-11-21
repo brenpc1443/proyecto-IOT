@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Encargado - Estacionamiento</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="dashboard">
+    <!-- Navbar -->
+    <nav class="navbar">
+      <h1>🅿️ Panel de Encargado</h1>
+      <div class="user-info">
+        <span id="nombreUsuario">Cargando...</span>
+        <button class="btn btn-danger btn-sm" id="btnLogout">Cerrar Sesión</button>
+      </div>
+    </nav>
+
+    <!-- Contenido -->
+    <div class="main-content">
+      <!-- Espacios (solo visualización) -->
+      <div class="card">
+        <h2>Estado de Espacios</h2>
+        <p style="color: var(--gray-600); margin-bottom: 1rem; font-size: 0.875rem;">
+          Actualización automática desde sensores
+        </p>
+        <div id="espaciosGrid" class="espacios-grid">
+          <div class="loading">Cargando espacios...</div>
+        </div>
+      </div>
+
+      <!-- Sesiones pendientes de pago -->
+      <div class="card">
+        <h2>Sesiones Pendientes de Pago</h2>
+        <p style="color: var(--gray-600); margin-bottom: 1rem; font-size: 0.875rem;">
+          Vehículos que ya salieron y esperan confirmación de pago
+        </p>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Espacio</th>
+                <th>Turno</th>
+                <th>Entrada</th>
+                <th>Salida</th>
+                <th>Total</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="sinPagarBody">
+              <tr><td colspan="6" class="loading">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/encargado.js"></script>
+</body>
+</html>
