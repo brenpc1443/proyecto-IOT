@@ -7,13 +7,14 @@ const authRoutes = require("./routes/auth");
 const espaciosRoutes = require("./routes/espacios");
 const sesionesRoutes = require("./routes/sesiones");
 const metricasRoutes = require("./routes/metricas");
+const hardwareRoutes = require("./routes/hardware");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
-app.use(express.static('public'))
+app.use(express.static("public"));
 app.use(
   session({
     secret: "parking-secret",
@@ -31,6 +32,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/espacios", espaciosRoutes);
 app.use("/api/sesiones", sesionesRoutes);
 app.use("/api/metricas", metricasRoutes);
+app.use("/api/hardware", hardwareRoutes);
 
 // Iniciar servidor
 app.listen(PORT, () => {
