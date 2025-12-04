@@ -201,110 +201,142 @@ class ReportePDF {
 
   dibujarResumenHistorial(resumen) {
     this.doc
-      .fontSize(12)
+      .fontSize(13)
       .font("Helvetica-Bold")
       .fillColor("#1f2937")
-      .text("📈 RESUMEN EJECUTIVO", 40);
-    this.doc.moveDown(0.8);
+      .text("RESUMEN EJECUTIVO", 40);
+    this.doc.moveDown(0.5);
 
+    // Tabla de resumen simple
+    const y = this.doc.y;
+    const col1 = 40;
+    const col2 = 250;
+    const col3 = 450;
+
+    // Encabezado tabla
+    this.doc
+      .strokeColor("#3b82f6")
+      .lineWidth(1)
+      .moveTo(col1, y)
+      .lineTo(555, y)
+      .stroke();
+
+    this.doc.fontSize(10).font("Helvetica-Bold").fillColor("#1f2937");
+
+    this.doc.text("Métrica", col1, y + 8);
+    this.doc.text("Cantidad", col2, y + 8);
+    this.doc.text("Porcentaje", col3, y + 8);
+
+    let posY = y + 25;
+
+    // Filas
     const items = [
-      {
-        label: "Total Sesiones",
-        valor: resumen.total_sesiones || 0,
-        color: "#3b82f6",
-      },
-      { label: "Pagadas", valor: resumen.pagadas || 0, color: "#22c55e" },
-      { label: "Pendientes", valor: resumen.pendientes || 0, color: "#f59e0b" },
-      { label: "Activas", valor: resumen.activas || 0, color: "#ef4444" },
+      { label: "Total Sesiones", valor: resumen.total_sesiones || 0 },
+      { label: "Pagadas", valor: resumen.pagadas || 0 },
+      { label: "Pendientes", valor: resumen.pendientes || 0 },
+      { label: "Activas", valor: resumen.activas || 0 },
     ];
 
-    let x = 40;
-    const ancho = 115;
+    const total = resumen.total_sesiones || 1;
 
     items.forEach((item, i) => {
-      const y = this.doc.y;
+      const bg = i % 2 === 0 ? "#f9fafb" : "white";
+      this.doc.rect(col1, posY - 5, 515, 18).fill(bg);
       this.doc
-        .rect(x, y, ancho, 70)
-        .fillAndStroke(item.color + "15", item.color)
-        .lineWidth(1.5);
+        .strokeColor("#e5e7eb")
+        .lineWidth(0.5)
+        .rect(col1, posY - 5, 515, 18)
+        .stroke();
 
-      this.doc
-        .fontSize(26)
-        .font("Helvetica-Bold")
-        .fillColor(item.color)
-        .text(item.valor.toString(), x + 5, y + 12, {
-          width: ancho - 10,
-          align: "center",
-        });
+      const porcentaje = ((item.valor / total) * 100).toFixed(1);
 
-      this.doc
-        .fontSize(8)
-        .font("Helvetica")
-        .fillColor("#555")
-        .text(item.label, x + 5, y + 48, {
-          width: ancho - 10,
-          align: "center",
-        });
+      this.doc.fontSize(9).font("Helvetica").fillColor("#1f2937");
 
-      x += ancho + 10;
-      if ((i + 1) % 4 === 0) {
-        x = 40;
-        this.doc.moveDown(4.5);
-      }
+      this.doc.text(item.label, col1 + 5, posY);
+      this.doc.text(item.valor.toString(), col2 + 5, posY, {
+        width: 50,
+        align: "right",
+      });
+      this.doc.text(porcentaje + "%", col3 + 5, posY, {
+        width: 50,
+        align: "right",
+      });
+
+      posY += 20;
     });
-    this.doc.moveDown(0.5);
+
+    this.doc.y = posY;
+    this.doc.moveDown(1);
   }
 
   dibujarResumenGeneral(resumen) {
     this.doc
-      .fontSize(12)
+      .fontSize(13)
       .font("Helvetica-Bold")
       .fillColor("#1f2937")
-      .text("📊 MÉTRICAS PRINCIPALES", 40);
-    this.doc.moveDown(0.8);
+      .text("MÉTRICAS PRINCIPALES", 40);
+    this.doc.moveDown(0.5);
 
+    // Tabla de resumen simple
+    const y = this.doc.y;
+    const col1 = 40;
+    const col2 = 250;
+    const col3 = 450;
+
+    // Encabezado tabla
+    this.doc
+      .strokeColor("#3b82f6")
+      .lineWidth(1)
+      .moveTo(col1, y)
+      .lineTo(555, y)
+      .stroke();
+
+    this.doc.fontSize(10).font("Helvetica-Bold").fillColor("#1f2937");
+
+    this.doc.text("Métrica", col1, y + 8);
+    this.doc.text("Cantidad", col2, y + 8);
+    this.doc.text("Porcentaje", col3, y + 8);
+
+    let posY = y + 25;
+
+    // Filas
     const items = [
-      { label: "Total", valor: resumen.total_sesiones || 0, color: "#3b82f6" },
-      { label: "Pagadas", valor: resumen.pagadas || 0, color: "#22c55e" },
-      { label: "Pendientes", valor: resumen.pendientes || 0, color: "#f59e0b" },
-      { label: "Activas", valor: resumen.activas || 0, color: "#ef4444" },
+      { label: "Total Sesiones", valor: resumen.total_sesiones || 0 },
+      { label: "Pagadas", valor: resumen.pagadas || 0 },
+      { label: "Pendientes", valor: resumen.pendientes || 0 },
+      { label: "Activas", valor: resumen.activas || 0 },
     ];
 
-    let x = 40;
-    const ancho = 115;
+    const total = resumen.total_sesiones || 1;
 
     items.forEach((item, i) => {
-      const y = this.doc.y;
+      const bg = i % 2 === 0 ? "#f9fafb" : "white";
+      this.doc.rect(col1, posY - 5, 515, 18).fill(bg);
       this.doc
-        .rect(x, y, ancho, 60)
-        .fillAndStroke(item.color + "15", item.color)
-        .lineWidth(1.5);
+        .strokeColor("#e5e7eb")
+        .lineWidth(0.5)
+        .rect(col1, posY - 5, 515, 18)
+        .stroke();
 
-      this.doc
-        .fontSize(22)
-        .font("Helvetica-Bold")
-        .fillColor(item.color)
-        .text(item.valor.toString(), x + 5, y + 10, {
-          width: ancho - 10,
-          align: "center",
-        });
+      const porcentaje = ((item.valor / total) * 100).toFixed(1);
 
-      this.doc
-        .fontSize(8)
-        .font("Helvetica")
-        .fillColor("#555")
-        .text(item.label, x + 5, y + 38, {
-          width: ancho - 10,
-          align: "center",
-        });
+      this.doc.fontSize(9).font("Helvetica").fillColor("#1f2937");
 
-      x += ancho + 10;
-      if ((i + 1) % 4 === 0) {
-        x = 40;
-        this.doc.moveDown(3.8);
-      }
+      this.doc.text(item.label, col1 + 5, posY);
+      this.doc.text(item.valor.toString(), col2 + 5, posY, {
+        width: 50,
+        align: "right",
+      });
+      this.doc.text(porcentaje + "%", col3 + 5, posY, {
+        width: 50,
+        align: "right",
+      });
+
+      posY += 20;
     });
-    this.doc.moveDown(0.5);
+
+    this.doc.y = posY;
+    this.doc.moveDown(1);
   }
 
   tablaHistorial(datos) {
