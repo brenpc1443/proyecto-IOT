@@ -31,28 +31,6 @@ const api = {
     return res.json();
   },
 
-  // Agregar este método a la API
-async getReportePDF(fechaInicio = "", fechaFin = "", tipo = "reporte") {
-  let url = `/api/metricas/pdf`;
-  const params = new URLSearchParams();
-  if (fechaInicio) params.append("fecha_inicio", fechaInicio);
-  if (fechaFin) params.append("fecha_fin", fechaFin);
-  if (tipo) params.append("tipo", tipo);
-
-  if (params.toString()) url += "?" + params.toString();
-
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Error al generar PDF");
-  
-  const blob = await res.blob();
-  const urlBlob = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = urlBlob;
-  a.download = `reporte_${new Date().getTime()}.pdf`;
-  a.click();
-  URL.revokeObjectURL(urlBlob);
-}
-  
   // ========== Sesiones ==========
   async registrarEntrada(id_espacio) {
     const res = await fetch(`${API_URL}/sesiones/entrada`, {
@@ -96,7 +74,7 @@ async getReportePDF(fechaInicio = "", fechaFin = "", tipo = "reporte") {
     return res.json();
   },
 
-  // NUEVO: Historial de sesiones
+  // ========== Historial de sesiones ==========
   async getHistorial(filtro = "", fecha = "") {
     let url = `${API_URL}/metricas/historial`;
     const params = new URLSearchParams();
@@ -110,7 +88,7 @@ async getReportePDF(fechaInicio = "", fechaFin = "", tipo = "reporte") {
     return res.json();
   },
 
-  // NUEVO: Reporte
+  // ========== Reporte ==========
   async getReporte(fechaInicio = "", fechaFin = "") {
     let url = `${API_URL}/metricas/reporte`;
     const params = new URLSearchParams();
@@ -122,5 +100,27 @@ async getReportePDF(fechaInicio = "", fechaFin = "", tipo = "reporte") {
     const res = await fetch(url);
     if (!res.ok) throw new Error("Error al obtener reporte");
     return res.json();
+  },
+
+  // ========== Reporte PDF ==========
+  async getReportePDF(fechaInicio = "", fechaFin = "", tipo = "reporte") {
+    let url = `${API_URL}/metricas/pdf`;
+    const params = new URLSearchParams();
+    if (fechaInicio) params.append("fecha_inicio", fechaInicio);
+    if (fechaFin) params.append("fecha_fin", fechaFin);
+    if (tipo) params.append("tipo", tipo);
+
+    if (params.toString()) url += "?" + params.toString();
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Error al generar PDF");
+
+    const blob = await res.blob();
+    const urlBlob = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = urlBlob;
+    a.download = `reporte_${new Date().getTime()}.pdf`;
+    a.click();
+    URL.revokeObjectURL(urlBlob);
   },
 };
