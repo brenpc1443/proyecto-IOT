@@ -8,6 +8,7 @@ const {
   obtenerHistorial,
   obtenerReporte,
 } = require("../controllers/sesionesController");
+const { generarReportePDF } = require("../controllers/reportController");
 const { verificarAuth, verificarRol } = require("../middleware/auth");
 
 router.get("/", verificarAuth, verificarRol("administrador"), obtenerMetricas);
@@ -31,6 +32,14 @@ router.get(
   verificarAuth,
   verificarRol("administrador"),
   obtenerReporte
+);
+
+// Nuevo endpoint para PDF
+router.get(
+  "/pdf",
+  verificarAuth,
+  verificarRol("administrador"),
+  generarReportePDF
 );
 
 module.exports = router;
