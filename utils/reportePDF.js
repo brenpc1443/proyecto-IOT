@@ -67,7 +67,7 @@ class ReportePDF {
     console.log("🏃 generarReporteHistorial iniciado");
 
     this.headerPrincipal();
-    this.doc.moveDown(1);
+    this.doc.moveDown(2);
 
     // Título HISTORIAL
     this.doc
@@ -118,7 +118,7 @@ class ReportePDF {
     console.log("🏃 generarReporteGeneral iniciado");
 
     this.headerPrincipal();
-    this.doc.moveDown(1);
+    this.doc.moveDown(2);
 
     // Título GENERAL
     this.doc
@@ -171,7 +171,7 @@ class ReportePDF {
   // ========================================
 
   headerPrincipal() {
-    this.doc.rect(30, 30, 540, 60).fill("#3b82f6");
+    this.doc.rect(30, 30, 540, 60).fill("#e0e7ff");
     this.doc
       .fontSize(28)
       .font("Helvetica-Bold")
@@ -191,7 +191,7 @@ class ReportePDF {
       .fillAndStroke("#f0f9ff", "#3b82f6")
       .lineWidth(1);
 
-    this.doc.fontSize(10).font("Helvetica").fillColor("#075985");
+    this.doc.fontSize(10).font("Helvetica").fillColor("#3b82f6");
 
     this.doc.text(
       "Periodo: " + fechas.inicio + " hasta " + fechas.fin,
@@ -221,7 +221,7 @@ class ReportePDF {
 
     // Encabezado tabla
     this.doc
-      .strokeColor("#ef4444")
+      .strokeColor("#3b82f6")
       .lineWidth(1)
       .moveTo(col1, y)
       .lineTo(555, y)
