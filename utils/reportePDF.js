@@ -171,7 +171,7 @@ class ReportePDF {
   // ========================================
 
   headerPrincipal() {
-    this.doc.rect(30, 30, 540, 60).fill("#e0e7ff");
+    this.doc.rect(30, 30, 540, 60).fill("#3b82f6");
     this.doc
       .fontSize(28)
       .font("Helvetica-Bold")
@@ -405,15 +405,18 @@ class ReportePDF {
     let x = 40;
 
     // ENCABEZADO
-    this.doc.fontSize(8).font("Helvetica-Bold").fillColor("white");
     cols.forEach((col) => {
       const w = col.ancho * escala;
-      this.doc.rect(x, y, w, 20).fill("#ffffffff");
-      this.doc.text(col.titulo, x + 2, y + 5, {
-        width: w - 4,
-        align: "center",
-        height: 20,
-      });
+      this.doc.rect(x, y, w, 20).fill("#3b82f6").stroke();
+      this.doc
+        .fontSize(8)
+        .font("Helvetica-Bold")
+        .fillColor("black")
+        .text(col.titulo, x + 2, y + 5, {
+          width: w - 4,
+          align: "center",
+          height: 20,
+        });
       x += w;
     });
 
