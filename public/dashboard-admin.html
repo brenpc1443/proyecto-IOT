@@ -73,10 +73,19 @@
         cursor: pointer;
         font-size: 0.875rem;
         font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: background 0.2s;
       }
 
       .export-btn:hover {
         background: #059669;
+      }
+
+      .export-btn.loading {
+        opacity: 0.7;
+        pointer-events: none;
       }
 
       .resumen-filtro {
@@ -142,6 +151,44 @@
         padding: 0.5rem 0.75rem;
         border-radius: 6px;
         font-weight: 600;
+      }
+
+      .btn-group {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #22c55e;
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        z-index: 1000;
+        animation: slideIn 0.3s ease;
+      }
+
+      .toast.show {
+        display: block;
+      }
+
+      .toast.error {
+        background: #ef4444;
+      }
+
+      @keyframes slideIn {
+        from {
+          transform: translateX(400px);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
       }
     </style>
   </head>
@@ -219,7 +266,6 @@
           </div>
         </div>
 
-
         <!-- TAB: HISTORIAL -->
         <div id="historial" class="tab-content">
           <div class="card">
@@ -243,9 +289,14 @@
               >
                 Filtrar
               </button>
-              <button class="export-btn" onclick="exportarHistorial()">
-                📥 Exportar CSV
-              </button>
+              <div class="btn-group">
+                <button class="export-btn" onclick="exportarHistorialCSV()">
+                  📊 CSV
+                </button>
+                <button class="export-btn" onclick="exportarHistorialPDF()">
+                  📄 PDF
+                </button>
+              </div>
             </div>
 
             <div id="resumenHistorial" class="resumen-filtro"></div>
@@ -289,9 +340,14 @@
               <button class="btn btn-primary btn-sm" onclick="cargarReporte()">
                 Generar Reporte
               </button>
-              <button class="export-btn" onclick="exportarReporte()">
-                📥 Exportar CSV
-              </button>
+              <div class="btn-group">
+                <button class="export-btn" onclick="exportarReporteCSV()">
+                  📊 CSV
+                </button>
+                <button class="export-btn" onclick="exportarReportePDF()">
+                  📄 PDF
+                </button>
+              </div>
             </div>
 
             <div class="table-container">
@@ -319,7 +375,6 @@
           </div>
         </div>
 
-
         <!-- TAB: ESPACIOS -->
         <div id="espacios" class="tab-content">
           <div class="card">
@@ -332,11 +387,23 @@
       </div>
     </div>
 
+    <!-- Toast Notifications -->
+    <div id="toast" class="toast"></div>
 
     <script src="js/api.js"></script>
     <script>
       let datosHistorial = [];
       let datosReporte = [];
+
+      // ========== Toast Notifications ==========
+      function mostrarToast(mensaje, tipo = 'success') {
+        const toast = document.getElementById('toast');
+        toast.textContent = mensaje;
+        toast.className = 'toast show ' + (tipo === 'error' ? 'error' : '');
+        setTimeout(() => {
+          toast.classList.remove('show');
+        }, 3000);
+      }
 
       // ========== Auth ==========
       (async () => {
@@ -394,6 +461,7 @@
           ).toFixed(2)}`;
         } catch (error) {
           console.error("Error al cargar métricas:", error);
+          mostrarToast("Error al cargar métricas", "error");
         }
       }
 
@@ -491,6 +559,7 @@
             .join("");
         } catch (error) {
           console.error("Error al cargar historial:", error);
+          mostrarToast("Error al cargar historial", "error");
           document.getElementById("historialBody").innerHTML =
             '<tr><td colspan="8" class="loading">Error al cargar</td></tr>';
         }
@@ -534,6 +603,7 @@
             .join("");
         } catch (error) {
           console.error("Error al cargar reporte:", error);
+          mostrarToast("Error al cargar reporte", "error");
           document.getElementById("reporteBody").innerHTML =
             '<tr><td colspan="9" class="loading">Error al cargar</td></tr>';
         }
@@ -595,7 +665,7 @@
 
       function exportarCSV(datos, filename) {
         if (datos.length === 0) {
-          alert("No hay datos para exportar");
+          mostrarToast("No hay datos para exportar", "error");
           return;
         }
 
@@ -605,20 +675,63 @@
           ...datos.map((row) => keys.map((k) => `"${row[k]}"`).join(",")),
         ].join("\n");
 
-        const blob = new Blob([csv], { type: "text/csv" });
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
         a.download = filename;
         a.click();
+        URL.revokeObjectURL(url);
+        mostrarToast("Archivo descargado correctamente");
       }
 
-      function exportarHistorial() {
+      function exportarHistorialCSV() {
         exportarCSV(datosHistorial, "historial.csv");
       }
 
-      function exportarReporte() {
+      function exportarReporteCSV() {
         exportarCSV(datosReporte, "reporte.csv");
+      }
+
+      async function exportarHistorialPDF() {
+        try {
+          const btn = event.target;
+          btn.classList.add('loading');
+          btn.disabled = true;
+
+          const fecha = document.getElementById("filtroFecha").value;
+          await api.getReportePDF(fecha, fecha, "historial");
+          
+          mostrarToast("PDF descargado correctamente");
+        } catch (error) {
+          console.error("Error descargando PDF:", error);
+          mostrarToast("Error al descargar PDF", "error");
+        } finally {
+          const btn = event.target;
+          btn.classList.remove('loading');
+          btn.disabled = false;
+        }
+      }
+
+      async function exportarReportePDF() {
+        try {
+          const btn = event.target;
+          btn.classList.add('loading');
+          btn.disabled = true;
+
+          const inicio = document.getElementById("reporteFechaInicio").value;
+          const fin = document.getElementById("reporteFechaFin").value;
+          
+          await api.getReportePDF(inicio, fin, "reporte");
+          mostrarToast("PDF descargado correctamente");
+        } catch (error) {
+          console.error("Error descargando PDF:", error);
+          mostrarToast("Error al descargar PDF", "error");
+        } finally {
+          const btn = event.target;
+          btn.classList.remove('loading');
+          btn.disabled = false;
+        }
       }
 
       // ========== Logout ==========
@@ -641,6 +754,4 @@
       }, 30000);
     </script>
   </body>
-</html>
-/body>
 </html>
