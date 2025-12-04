@@ -221,7 +221,7 @@ class ReportePDF {
 
     // Encabezado tabla
     this.doc
-      .strokeColor("#3b82f6")
+      .strokeColor("#ef4444")
       .lineWidth(1)
       .moveTo(col1, y)
       .lineTo(555, y)
@@ -408,7 +408,7 @@ class ReportePDF {
     this.doc.fontSize(8).font("Helvetica-Bold").fillColor("white");
     cols.forEach((col) => {
       const w = col.ancho * escala;
-      this.doc.rect(x, y, w, 20).fill("#3b82f6");
+      this.doc.rect(x, y, w, 20).fill("#ffffffff");
       this.doc.text(col.titulo, x + 2, y + 5, {
         width: w - 4,
         align: "center",
