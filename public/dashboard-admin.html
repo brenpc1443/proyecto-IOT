@@ -219,6 +219,7 @@
           </div>
         </div>
 
+
         <!-- TAB: HISTORIAL -->
         <div id="historial" class="tab-content">
           <div class="card">
@@ -243,7 +244,7 @@
                 Filtrar
               </button>
               <button class="export-btn" onclick="exportarHistorial()">
-                📥 Exportar PDF
+                📥 Exportar CSV
               </button>
             </div>
 
@@ -289,7 +290,7 @@
                 Generar Reporte
               </button>
               <button class="export-btn" onclick="exportarReporte()">
-                📥 Exportar PDF
+                📥 Exportar CSV
               </button>
             </div>
 
@@ -318,6 +319,7 @@
           </div>
         </div>
 
+
         <!-- TAB: ESPACIOS -->
         <div id="espacios" class="tab-content">
           <div class="card">
@@ -329,6 +331,7 @@
         </div>
       </div>
     </div>
+
 
     <script src="js/api.js"></script>
     <script>
@@ -590,243 +593,32 @@
         return horas > 0 ? `${horas}h ${mins}m` : `${mins}m`;
       }
 
-      // ========== Exportar Historial PDF ==========
-      function exportarHistorial() {
-        if (datosHistorial.length === 0) {
+      function exportarCSV(datos, filename) {
+        if (datos.length === 0) {
           alert("No hay datos para exportar");
           return;
         }
 
-        let html = `
-          <html>
-            <head>
-              <meta charset="utf-8">
-              <style>
-                body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
-                h1 { text-align: center; color: #2563eb; border-bottom: 3px solid #2563eb; padding-bottom: 10px; }
-                .info { text-align: center; margin-bottom: 20px; font-size: 12px; color: #666; }
-                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                th { background: #1f2937; color: white; padding: 12px; text-align: left; font-weight: bold; }
-                td { padding: 10px 12px; border-bottom: 1px solid #e0e0e0; }
-                tr:nth-child(even) { background: #f9fafb; }
-                .resumen { margin-top: 30px; padding: 15px; background: #f0f9ff; border-left: 4px solid #2563eb; }
-                .resumen h3 { margin: 0 0 10px 0; color: #1f2937; }
-                .resumen-item { margin: 8px 0; display: flex; justify-content: space-between; }
-                .resumen-item strong { color: #2563eb; }
-              </style>
-            </head>
-            <body>
-              <h1>📋 Historial de Sesiones</h1>
-              <div class="info">
-                <p>Generado: ${new Date().toLocaleString("es-PE")}</p>
-              </div>
-              
-              <table>
-                <thead>
-                  <tr>
-                    <th>ID Sesión</th>
-                    <th>Espacio</th>
-                    <th>Turno</th>
-                    <th>Entrada</th>
-                    <th>Salida</th>
-                    <th>Duración</th>
-                    <th>Tarifa</th>
-                    <th>Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-        `;
+        const keys = Object.keys(datos[0]);
+        const csv = [
+          keys.join(","),
+          ...datos.map((row) => keys.map((k) => `"${row[k]}"`).join(",")),
+        ].join("\n");
 
-        let totalTarifa = 0;
-        const pagadas = datosHistorial.filter((s) => s.pago === 1).length;
-        const pendientes = datosHistorial.filter(
-          (s) => s.pago === 0 && s.hora_salida
-        ).length;
-        const activas = datosHistorial.filter((s) => !s.hora_salida).length;
-
-        datosHistorial.forEach((s) => {
-          totalTarifa += s.total_tarifa || 0;
-          const estado = s.pago === 1
-            ? "Pagada"
-            : s.pago === 0 && s.hora_salida
-            ? "Pendiente"
-            : "Activa";
-
-          html += `
-            <tr>
-              <td>#${s.id_sesion}</td>
-              <td>E${s.numero}</td>
-              <td>${s.nombre_turno}</td>
-              <td>${formatearFecha(s.hora_entrada)}</td>
-              <td>${formatearFecha(s.hora_salida)}</td>
-              <td>${calcularDuracion(s.hora_entrada, s.hora_salida)}</td>
-              <td>S/ ${(s.total_tarifa || 0).toFixed(2)}</td>
-              <td>${estado}</td>
-            </tr>
-          `;
-        });
-
-        html += `
-                </tbody>
-              </table>
-
-              <div class="resumen">
-                <h3>📊 Resumen</h3>
-                <div class="resumen-item">
-                  <span>Total de Sesiones:</span>
-                  <strong>${datosHistorial.length}</strong>
-                </div>
-                <div class="resumen-item">
-                  <span>Sesiones Pagadas:</span>
-                  <strong>${pagadas}</strong>
-                </div>
-                <div class="resumen-item">
-                  <span>Sesiones Pendientes:</span>
-                  <strong>${pendientes}</strong>
-                </div>
-                <div class="resumen-item">
-                  <span>Sesiones Activas:</span>
-                  <strong>${activas}</strong>
-                </div>
-                <div class="resumen-item" style="border-top: 1px solid #2563eb; padding-top: 10px; margin-top: 10px;">
-                  <span>Tarifa Total:</span>
-                  <strong>S/ ${totalTarifa.toFixed(2)}</strong>
-                </div>
-              </div>
-            </body>
-          </html>
-        `;
-
-        const ventana = window.open("", "", "width=900,height=700");
-        ventana.document.write(html);
-        ventana.document.close();
-        ventana.print();
+        const blob = new Blob([csv], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        a.click();
       }
 
-      // ========== Exportar Reporte PDF ==========
+      function exportarHistorial() {
+        exportarCSV(datosHistorial, "historial.csv");
+      }
+
       function exportarReporte() {
-        if (datosReporte.length === 0) {
-          alert("Genera un reporte primero");
-          return;
-        }
-
-        let html = `
-          <html>
-            <head>
-              <meta charset="utf-8">
-              <style>
-                body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
-                h1 { text-align: center; color: #2563eb; border-bottom: 3px solid #2563eb; padding-bottom: 10px; }
-                .info { text-align: center; margin-bottom: 20px; font-size: 12px; color: #666; }
-                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                th { background: #1f2937; color: white; padding: 12px; text-align: left; font-weight: bold; }
-                td { padding: 10px 12px; border-bottom: 1px solid #e0e0e0; }
-                tr:nth-child(even) { background: #f9fafb; }
-                .numero { text-align: center; }
-                .moneda { text-align: right; }
-                .turno { text-transform: capitalize; }
-                .resumen { margin-top: 30px; padding: 15px; background: #f0f9ff; border-left: 4px solid #2563eb; }
-                .resumen h3 { margin: 0 0 10px 0; color: #1f2937; }
-                .resumen-item { margin: 8px 0; display: flex; justify-content: space-between; }
-                .resumen-item strong { color: #2563eb; }
-              </style>
-            </head>
-            <body>
-              <h1>📊 Reporte de Estacionamiento</h1>
-              <div class="info">
-                <p>Generado: ${new Date().toLocaleString("es-PE")}</p>
-                <p>Período: ${document.getElementById("reporteFechaInicio").value} al ${document.getElementById("reporteFechaFin").value}</p>
-              </div>
-              
-              <table>
-                <thead>
-                  <tr>
-                    <th>Fecha</th>
-                    <th>Turno</th>
-                    <th class="numero">Sesiones</th>
-                    <th class="numero">Pagadas</th>
-                    <th class="numero">Pendientes</th>
-                    <th class="numero">Activas</th>
-                    <th class="moneda">Pagados</th>
-                    <th class="moneda">Pendientes</th>
-                    <th class="numero">T. Prom.</th>
-                  </tr>
-                </thead>
-                <tbody>
-        `;
-
-        let totalSesiones = 0, totalPagadas = 0, totalPendientes = 0, totalActivas = 0;
-        let totalIngresosPagados = 0, totalIngresosPendientes = 0, tiempoPromedio = 0;
-
-        datosReporte.forEach((r) => {
-          totalSesiones += r.total_sesiones || 0;
-          totalPagadas += r.pagadas || 0;
-          totalPendientes += r.pendientes || 0;
-          totalActivas += r.activas || 0;
-          totalIngresosPagados += r.ingresos_pagados || 0;
-          totalIngresosPendientes += r.ingresos_pendientes || 0;
-          tiempoPromedio += r.tiempo_promedio || 0;
-
-          html += `
-            <tr>
-              <td><strong>${r.fecha}</strong></td>
-              <td class="turno">${r.nombre_turno}</td>
-              <td class="numero">${r.total_sesiones || 0}</td>
-              <td class="numero">${r.pagadas || 0}</td>
-              <td class="numero">${r.pendientes || 0}</td>
-              <td class="numero">${r.activas || 0}</td>
-              <td class="moneda">S/ ${(r.ingresos_pagados || 0).toFixed(2)}</td>
-              <td class="moneda">S/ ${(r.ingresos_pendientes || 0).toFixed(2)}</td>
-              <td class="numero">${Math.round(r.tiempo_promedio || 0)} min</td>
-            </tr>
-          `;
-        });
-
-        tiempoPromedio = Math.round(tiempoPromedio / datosReporte.length);
-
-        html += `
-                </tbody>
-              </table>
-
-              <div class="resumen">
-                <h3>📈 Resumen del Período</h3>
-                <div class="resumen-item">
-                  <span>Total de Sesiones:</span>
-                  <strong>${totalSesiones}</strong>
-                </div>
-                <div class="resumen-item">
-                  <span>Sesiones Pagadas:</span>
-                  <strong>${totalPagadas}</strong>
-                </div>
-                <div class="resumen-item">
-                  <span>Sesiones Pendientes:</span>
-                  <strong>${totalPendientes}</strong>
-                </div>
-                <div class="resumen-item">
-                  <span>Sesiones Activas:</span>
-                  <strong>${totalActivas}</strong>
-                </div>
-                <div class="resumen-item" style="border-top: 1px solid #2563eb; padding-top: 10px; margin-top: 10px;">
-                  <span>Ingresos Pagados:</span>
-                  <strong>S/ ${totalIngresosPagados.toFixed(2)}</strong>
-                </div>
-                <div class="resumen-item">
-                  <span>Ingresos Pendientes:</span>
-                  <strong>S/ ${totalIngresosPendientes.toFixed(2)}</strong>
-                </div>
-                <div class="resumen-item">
-                  <span>Tiempo Promedio de Estancia:</span>
-                  <strong>${tiempoPromedio} minutos</strong>
-                </div>
-              </div>
-            </body>
-          </html>
-        `;
-
-        const ventana = window.open("", "", "width=900,height=700");
-        ventana.document.write(html);
-        ventana.document.close();
-        ventana.print();
+        exportarCSV(datosReporte, "reporte.csv");
       }
 
       // ========== Logout ==========
@@ -849,4 +641,6 @@
       }, 30000);
     </script>
   </body>
+</html>
+/body>
 </html>
