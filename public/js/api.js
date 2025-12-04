@@ -102,28 +102,58 @@ const api = {
     return res.json();
   },
 
-  // ========== Reporte PDF ==========
+  // ========== Reporte PDF - MEJORADO ==========
   async getReportePDF(fechaInicio = "", fechaFin = "", tipo = "reporte") {
-    let url = `${API_URL}/metricas/pdf`;
-    const params = new URLSearchParams();
-    if (fechaInicio) params.append("fecha_inicio", fechaInicio);
-    if (fechaFin) params.append("fecha_fin", fechaFin);
-    if (tipo) params.append("tipo", tipo);
-
-    if (params.toString()) url += "?" + params.toString();
-
     try {
+      // Obtener fecha actual si no se proporciona
+      const hoy = new Date().toISOString().split("T")[0];
+
+      // Si no hay fecha inicio, usar la fecha actual
+      if (!fechaInicio) {
+        fechaInicio = hoy;
+      }
+
+      // Si no hay fecha fin, usar la fecha actual
+      if (!fechaFin) {
+        fechaFin = hoy;
+      }
+
+      // Construir URL con parámetros
+      const params = new URLSearchParams();
+      params.append("fecha_inicio", fechaInicio);
+      params.append("fecha_fin", fechaFin);
+      params.append("tipo", tipo);
+
+      const url = `${API_URL}/metricas/pdf?${params.toString()}`;
+
+      console.log("Descargando PDF desde:", url);
+
       const res = await fetch(url);
-      if (!res.ok) throw new Error("Error al generar PDF");
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Error del servidor:", errorText);
+        throw new Error(`Error ${res.status}: ${errorText}`);
+      }
 
       const blob = await res.blob();
+
+      // Validar que sea un PDF válido
+      if (blob.type !== "application/pdf") {
+        throw new Error("La respuesta no es un PDF válido");
+      }
+
+      // Crear y descargar
       const urlBlob = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = urlBlob;
-      a.download = `reporte_${new Date().getTime()}.pdf`;
+      a.download = `reporte_${tipo}_${Date.now()}.pdf`;
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       URL.revokeObjectURL(urlBlob);
     } catch (error) {
+      console.error("Error en getReportePDF:", error);
       throw error;
     }
   },

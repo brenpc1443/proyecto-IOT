@@ -396,12 +396,12 @@
       let datosReporte = [];
 
       // ========== Toast Notifications ==========
-      function mostrarToast(mensaje, tipo = 'success') {
-        const toast = document.getElementById('toast');
+      function mostrarToast(mensaje, tipo = "success") {
+        const toast = document.getElementById("toast");
         toast.textContent = mensaje;
-        toast.className = 'toast show ' + (tipo === 'error' ? 'error' : '');
+        toast.className = "toast show " + (tipo === "error" ? "error" : "");
         setTimeout(() => {
-          toast.classList.remove('show');
+          toast.classList.remove("show");
         }, 3000);
       }
 
@@ -480,14 +480,14 @@
           tbody.innerHTML = turnos
             .map(
               (t) => `
-          <tr>
-            <td style="text-transform: capitalize;"><strong>${
-              t.nombre_turno
-            }</strong></td>
-            <td>${t.sesiones || 0}</td>
-            <td><strong>S/ ${(t.ingresos || 0).toFixed(2)}</strong></td>
-          </tr>
-        `
+                <tr>
+                  <td style="text-transform: capitalize;"><strong>${
+                    t.nombre_turno
+                  }</strong></td>
+                  <td>${t.sesiones || 0}</td>
+                  <td><strong>S/ ${(t.ingresos || 0).toFixed(2)}</strong></td>
+                </tr>
+              `
             )
             .join("");
         } catch (error) {
@@ -518,43 +518,45 @@
           const activas = datosHistorial.filter((s) => !s.hora_salida).length;
 
           document.getElementById("resumenHistorial").innerHTML = `
-          ${fecha ? `<strong>Fecha:</strong> ${fecha} | ` : ""}
-          <strong>Total:</strong> ${datosHistorial.length} | 
-          <strong>Pagadas:</strong> ${pagadas} | 
-          <strong>Pendientes:</strong> ${pendientes} | 
-          <strong>Activas:</strong> ${activas}
-        `;
+                ${fecha ? `<strong>Fecha:</strong> ${fecha} | ` : ""}
+                <strong>Total:</strong> ${datosHistorial.length} |
+                <strong>Pagadas:</strong> ${pagadas} |
+                <strong>Pendientes:</strong> ${pendientes} |
+                <strong>Activas:</strong> ${activas}
+              `;
 
           tbody.innerHTML = datosHistorial
             .map(
               (s) => `
-          <tr>
-            <td>#${s.id_sesion}</td>
-            <td>E${s.numero}</td>
-            <td style="text-transform: capitalize;">${s.nombre_turno}</td>
-            <td>${formatearFecha(s.hora_entrada)}</td>
-            <td>${formatearFecha(s.hora_salida)}</td>
-            <td>${calcularDuracion(s.hora_entrada, s.hora_salida)}</td>
-            <td><strong>S/ ${(s.total_tarifa || 0).toFixed(2)}</strong></td>
-            <td>
-              ${
-                s.pago === 1
-                  ? '<span class="celda-estado estado-pagada">✓ Pagada</span>'
-                  : ""
-              }
-              ${
-                s.pago === 0 && s.hora_salida
-                  ? '<span class="celda-estado estado-pendiente">⏳ Pendiente</span>'
-                  : ""
-              }
-              ${
-                !s.hora_salida
-                  ? '<span class="celda-estado estado-activa">▶ Activa</span>'
-                  : ""
-              }
-            </td>
-          </tr>
-        `
+                <tr>
+                  <td>#${s.id_sesion}</td>
+                  <td>E${s.numero}</td>
+                  <td style="text-transform: capitalize;">${s.nombre_turno}</td>
+                  <td>${formatearFecha(s.hora_entrada)}</td>
+                  <td>${formatearFecha(s.hora_salida)}</td>
+                  <td>${calcularDuracion(s.hora_entrada, s.hora_salida)}</td>
+                  <td><strong>S/ ${(s.total_tarifa || 0).toFixed(
+                    2
+                  )}</strong></td>
+                  <td>
+                    ${
+                      s.pago === 1
+                        ? '<span class="celda-estado estado-pagada">✓ Pagada</span>'
+                        : ""
+                    }
+                    ${
+                      s.pago === 0 && s.hora_salida
+                        ? '<span class="celda-estado estado-pendiente">⏳ Pendiente</span>'
+                        : ""
+                    }
+                    ${
+                      !s.hora_salida
+                        ? '<span class="celda-estado estado-activa">▶ Activa</span>'
+                        : ""
+                    }
+                  </td>
+                </tr>
+              `
             )
             .join("");
         } catch (error) {
@@ -583,22 +585,24 @@
           tbody.innerHTML = datosReporte
             .map(
               (r) => `
-          <tr>
-            <td><strong>${r.fecha}</strong></td>
-            <td style="text-transform: capitalize;">${r.nombre_turno}</td>
-            <td>${r.total_sesiones || 0}</td>
-            <td>${r.pagadas || 0}</td>
-            <td>${r.pendientes || 0}</td>
-            <td>${r.activas || 0}</td>
-            <td><strong>S/ ${(r.ingresos_pagados || 0).toFixed(2)}</strong></td>
-            <td><strong>S/ ${(r.ingresos_pendientes || 0).toFixed(
-              2
-            )}</strong></td>
-            <td><span class="tiempo-promedio">${(
-              r.tiempo_promedio || 0
-            ).toFixed(0)} min</span></td>
-          </tr>
-        `
+                <tr>
+                  <td><strong>${r.fecha}</strong></td>
+                  <td style="text-transform: capitalize;">${r.nombre_turno}</td>
+                  <td>${r.total_sesiones || 0}</td>
+                  <td>${r.pagadas || 0}</td>
+                  <td>${r.pendientes || 0}</td>
+                  <td>${r.activas || 0}</td>
+                  <td><strong>S/ ${(r.ingresos_pagados || 0).toFixed(
+                    2
+                  )}</strong></td>
+                  <td><strong>S/ ${(r.ingresos_pendientes || 0).toFixed(
+                    2
+                  )}</strong></td>
+                  <td><span class="tiempo-promedio">${(
+                    r.tiempo_promedio || 0
+                  ).toFixed(0)} min</span></td>
+                </tr>
+              `
             )
             .join("");
         } catch (error) {
@@ -623,20 +627,20 @@
           ).length;
 
           grid.innerHTML = `
-          <div style="grid-column: 1 / -1; margin-bottom: 1rem; color: var(--gray-600);">
-            <strong>${disponibles}</strong> disponibles · <strong>${ocupados}</strong> ocupados
-          </div>
-          ${espacios
-            .map(
-              (e) => `
-            <div class="espacio ${e.estado}" style="cursor: default;">
-              <span class="numero">${e.numero}</span>
-              <span class="estado">${e.estado}</span>
-            </div>
-          `
-            )
-            .join("")}
-        `;
+                <div style="grid-column: 1 / -1; margin-bottom: 1rem; color: var(--gray-600);">
+                  <strong>${disponibles}</strong> disponibles · <strong>${ocupados}</strong> ocupados
+                </div>
+                ${espacios
+                  .map(
+                    (e) => `
+                  <div class="espacio ${e.estado}" style="cursor: default;">
+                    <span class="numero">${e.numero}</span>
+                    <span class="estado">${e.estado}</span>
+                  </div>
+                `
+                  )
+                  .join("")}
+              `;
         } catch (error) {
           console.error("Error al cargar espacios:", error);
         }
@@ -664,68 +668,146 @@
       }
 
       function exportarCSV(datos, filename) {
-        if (datos.length === 0) {
+        if (!datos || datos.length === 0) {
           mostrarToast("No hay datos para exportar", "error");
           return;
         }
 
-        const keys = Object.keys(datos[0]);
-        const csv = [
-          keys.join(","),
-          ...datos.map((row) => keys.map((k) => `"${row[k]}"`).join(",")),
-        ].join("\n");
+        try {
+          const keys = Object.keys(datos[0]);
+          const headers = keys.join(",");
 
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
-        mostrarToast("Archivo descargado correctamente");
+          const rows = datos.map((row) =>
+            keys
+              .map((key) => {
+                let value = row[key];
+                // Escapar comillas y entrecomillar campos
+                if (
+                  typeof value === "string" &&
+                  (value.includes(",") ||
+                    value.includes('"') ||
+                    value.includes("\n"))
+                ) {
+                  value = `"${value.replace(/"/g, '""')}"`;
+                }
+                return value;
+              })
+              .join(",")
+          );
+
+          const csv = [headers, ...rows].join("\n");
+          const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+
+          mostrarToast("CSV descargado correctamente");
+        } catch (error) {
+          console.error("Error exportando CSV:", error);
+          mostrarToast("Error al descargar CSV", "error");
+        }
       }
 
       function exportarHistorialCSV() {
-        exportarCSV(datosHistorial, "historial.csv");
+        if (!datosHistorial || datosHistorial.length === 0) {
+          mostrarToast("No hay datos en historial para exportar", "error");
+          return;
+        }
+
+        exportarCSV(
+          datosHistorial,
+          `historial_${new Date().toISOString().split("T")[0]}.csv`
+        );
       }
 
+      // ========== Exportar Reporte a CSV ==========
       function exportarReporteCSV() {
-        exportarCSV(datosReporte, "reporte.csv");
+        if (!datosReporte || datosReporte.length === 0) {
+          mostrarToast("No hay datos en reporte para exportar", "error");
+          return;
+        }
+
+        exportarCSV(
+          datosReporte,
+          `reporte_${new Date().toISOString().split("T")[0]}.csv`
+        );
       }
 
       async function exportarHistorialPDF(btn) {
         try {
-          btn.classList.add('loading');
+          btn.classList.add("loading");
           btn.disabled = true;
 
+          // Obtener fecha del filtro
           const fecha = document.getElementById("filtroFecha").value;
+
+          if (!fecha) {
+            mostrarToast("Seleccione una fecha para exportar", "error");
+            btn.classList.remove("loading");
+            btn.disabled = false;
+            return;
+          }
+
+          console.log("Exportando historial para fecha:", fecha);
+
+          // Enviar solicitud con misma fecha como inicio y fin
           await api.getReportePDF(fecha, fecha, "historial");
-          
+
           mostrarToast("PDF descargado correctamente");
         } catch (error) {
           console.error("Error descargando PDF:", error);
-          mostrarToast("Error al descargar PDF", "error");
+          mostrarToast(error.message || "Error al descargar PDF", "error");
         } finally {
-          btn.classList.remove('loading');
+          btn.classList.remove("loading");
           btn.disabled = false;
         }
       }
 
       async function exportarReportePDF(btn) {
         try {
-          btn.classList.add('loading');
+          btn.classList.add("loading");
           btn.disabled = true;
 
+          // Obtener fechas del formulario
           const inicio = document.getElementById("reporteFechaInicio").value;
           const fin = document.getElementById("reporteFechaFin").value;
-          
+
+          // Validación
+          if (!inicio || !fin) {
+            mostrarToast(
+              "Seleccione fecha inicio y fin para exportar",
+              "error"
+            );
+            btn.classList.remove("loading");
+            btn.disabled = false;
+            return;
+          }
+
+          if (new Date(inicio) > new Date(fin)) {
+            mostrarToast(
+              "La fecha inicio no puede ser mayor a la fecha fin",
+              "error"
+            );
+            btn.classList.remove("loading");
+            btn.disabled = false;
+            return;
+          }
+
+          console.log("Exportando reporte de", inicio, "a", fin);
+
           await api.getReportePDF(inicio, fin, "reporte");
+
           mostrarToast("PDF descargado correctamente");
         } catch (error) {
           console.error("Error descargando PDF:", error);
-          mostrarToast("Error al descargar PDF", "error");
+          mostrarToast(error.message || "Error al descargar PDF", "error");
         } finally {
-          btn.classList.remove('loading');
+          btn.classList.remove("loading");
           btn.disabled = false;
         }
       }
