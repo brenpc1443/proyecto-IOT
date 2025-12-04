@@ -1,74 +1,643 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Panel Admin - Estacionamiento</title>
-  <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-  <div class="dashboard">
-    <!-- Navbar -->
-    <nav class="navbar">
-      <h1>🅿️ Panel de Administración</h1>
-      <div class="user-info">
-        <span id="nombreUsuario">Cargando...</span>
-        <button class="btn btn-danger btn-sm" id="btnLogout">Cerrar Sesión</button>
-      </div>
-    </nav>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Panel Admin - Estacionamiento</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <style>
+      .tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid var(--gray-200);
+      }
 
-    <!-- Contenido -->
-    <div class="main-content">
-      <!-- Stats generales -->
-      <div class="stats-grid" id="statsGrid">
-        <div class="stat-card">
-          <div class="label">Total Sesiones</div>
-          <div class="value" id="totalSesiones">-</div>
-        </div>
-        <div class="stat-card success">
-          <div class="label">Pagadas</div>
-          <div class="value" id="pagadas">-</div>
-        </div>
-        <div class="stat-card warning">
-          <div class="label">Pendientes</div>
-          <div class="value" id="pendientes">-</div>
-        </div>
-        <div class="stat-card primary">
-          <div class="label">Ingresos Totales</div>
-          <div class="value" id="ingresos">-</div>
-        </div>
-      </div>
+      .tab-btn {
+        background: none;
+        border: none;
+        padding: 1rem;
+        cursor: pointer;
+        font-weight: 500;
+        color: var(--gray-600);
+        border-bottom: 3px solid transparent;
+        transition: all 0.2s;
+      }
 
-      <!-- Métricas por turno -->
-      <div class="card">
-        <h2>Métricas por Turno</h2>
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Turno</th>
-                <th>Sesiones</th>
-                <th>Ingresos</th>
-              </tr>
-            </thead>
-            <tbody id="turnosBody">
-              <tr><td colspan="3" class="loading">Cargando...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      .tab-btn.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+      }
 
-      <!-- Espacios (vista solo lectura) -->
-      <div class="card">
-        <h2>Estado Actual de Espacios</h2>
-        <div id="espaciosGrid" class="espacios-grid">
-          <div class="loading">Cargando espacios...</div>
+      .tab-btn:hover {
+        color: var(--primary);
+      }
+
+      .tab-content {
+        display: none;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+
+      .filters {
+        background: var(--gray-50);
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .filters input,
+      .filters select {
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--gray-200);
+        border-radius: 6px;
+        font-size: 0.875rem;
+      }
+
+      .filters button {
+        padding: 0.5rem 1rem;
+      }
+
+      .export-btn {
+        background: #10b981;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 500;
+      }
+
+      .export-btn:hover {
+        background: #059669;
+      }
+
+      .resumen-filtro {
+        background: var(--gray-50);
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        font-size: 0.875rem;
+        color: var(--gray-600);
+      }
+
+      .celda-estado {
+        padding: 0.25rem 0.75rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-align: center;
+        display: inline-block;
+      }
+
+      .estado-pagada {
+        background: #dcfce7;
+        color: #166534;
+      }
+
+      .estado-pendiente {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      .estado-activa {
+        background: #e0e7ff;
+        color: #3730a3;
+      }
+
+      .chart-container {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid var(--gray-200);
+        border-radius: 50%;
+        border-top-color: var(--primary);
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .tiempo-promedio {
+        background: #f0f9ff;
+        color: #075985;
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dashboard">
+      <!-- Navbar -->
+      <nav class="navbar">
+        <h1>🅿️ Panel de Administración</h1>
+        <div class="user-info">
+          <span id="nombreUsuario">Cargando...</span>
+          <button class="btn btn-danger btn-sm" id="btnLogout">
+            Cerrar Sesión
+          </button>
+        </div>
+      </nav>
+
+      <!-- Contenido -->
+      <div class="main-content">
+        <!-- Stats generales -->
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-card">
+            <div class="label">Total Sesiones</div>
+            <div class="value" id="totalSesiones">-</div>
+          </div>
+          <div class="stat-card success">
+            <div class="label">Pagadas</div>
+            <div class="value" id="pagadas">-</div>
+          </div>
+          <div class="stat-card warning">
+            <div class="label">Pendientes</div>
+            <div class="value" id="pendientes">-</div>
+          </div>
+          <div class="stat-card primary">
+            <div class="label">Ingresos Totales</div>
+            <div class="value" id="ingresos">-</div>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+          <button class="tab-btn active" onclick="cambiarTab('resumen')">
+            📊 Resumen
+          </button>
+          <button class="tab-btn" onclick="cambiarTab('historial')">
+            📋 Historial
+          </button>
+          <button class="tab-btn" onclick="cambiarTab('reporte')">
+            📈 Reportes
+          </button>
+          <button class="tab-btn" onclick="cambiarTab('espacios')">
+            🅿️ Espacios
+          </button>
+        </div>
+
+        <!-- TAB: RESUMEN -->
+        <div id="resumen" class="tab-content active">
+          <div class="card">
+            <h2>Métricas por Turno</h2>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Turno</th>
+                    <th>Sesiones</th>
+                    <th>Ingresos</th>
+                  </tr>
+                </thead>
+                <tbody id="turnosBody">
+                  <tr>
+                    <td colspan="3" class="loading">Cargando...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: HISTORIAL -->
+        <div id="historial" class="tab-content">
+          <div class="card">
+            <h2>Historial de Sesiones</h2>
+
+            <div class="filters">
+              <input
+                type="date"
+                id="filtroFecha"
+                placeholder="Filtrar por fecha"
+              />
+              <select id="filtroEstado">
+                <option value="">Todos</option>
+                <option value="pagadas">Pagadas</option>
+                <option value="pendientes">Pendientes</option>
+                <option value="activas">Activas</option>
+              </select>
+              <button
+                class="btn btn-primary btn-sm"
+                onclick="cargarHistorial()"
+              >
+                Filtrar
+              </button>
+              <button class="export-btn" onclick="exportarHistorial()">
+                📥 Exportar CSV
+              </button>
+            </div>
+
+            <div id="resumenHistorial" class="resumen-filtro"></div>
+
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID Sesión</th>
+                    <th>Espacio</th>
+                    <th>Turno</th>
+                    <th>Entrada</th>
+                    <th>Salida</th>
+                    <th>Duración</th>
+                    <th>Tarifa</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody id="historialBody">
+                  <tr>
+                    <td colspan="8" class="loading">Cargando...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: REPORTES -->
+        <div id="reporte" class="tab-content">
+          <div class="card">
+            <h2>Reportes por Período</h2>
+
+            <div class="filters">
+              <input
+                type="date"
+                id="reporteFechaInicio"
+                placeholder="Fecha inicio"
+              />
+              <input type="date" id="reporteFechaFin" placeholder="Fecha fin" />
+              <button class="btn btn-primary btn-sm" onclick="cargarReporte()">
+                Generar Reporte
+              </button>
+              <button class="export-btn" onclick="exportarReporte()">
+                📥 Exportar CSV
+              </button>
+            </div>
+
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Turno</th>
+                    <th>Sesiones</th>
+                    <th>Pagadas</th>
+                    <th>Pendientes</th>
+                    <th>Activas</th>
+                    <th>Ingresos Pagados</th>
+                    <th>Ingresos Pendientes</th>
+                    <th>Tiempo Promedio</th>
+                  </tr>
+                </thead>
+                <tbody id="reporteBody">
+                  <tr>
+                    <td colspan="9" class="loading">Cargando...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: ESPACIOS -->
+        <div id="espacios" class="tab-content">
+          <div class="card">
+            <h2>Estado de Espacios</h2>
+            <div id="espaciosGrid" class="espacios-grid">
+              <div class="loading">Cargando espacios...</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <script src="js/api.js"></script>
-  <script src="js/admin.js"></script>
-</body>
+    <script src="js/api.js"></script>
+    <script>
+      let datosHistorial = [];
+      let datosReporte = [];
+
+      // ========== Auth ==========
+      (async () => {
+        const usuario = await api.getUsuarioActual();
+        if (!usuario) {
+          window.location.href = "index.html";
+          return;
+        }
+        if (usuario.rol !== "administrador") {
+          window.location.href = "dashboard-encargado.html";
+          return;
+        }
+        document.getElementById("nombreUsuario").textContent =
+          usuario.nombre_usuario;
+        cargarDatos();
+      })();
+
+      // ========== Cambiar Tab ==========
+      function cambiarTab(tab) {
+        document
+          .querySelectorAll(".tab-content")
+          .forEach((el) => el.classList.remove("active"));
+        document
+          .querySelectorAll(".tab-btn")
+          .forEach((el) => el.classList.remove("active"));
+
+        document.getElementById(tab).classList.add("active");
+        event.target.classList.add("active");
+
+        if (tab === "historial" && datosHistorial.length === 0)
+          cargarHistorial();
+        if (tab === "reporte" && datosReporte.length === 0) cargarReporte();
+        if (tab === "espacios") cargarEspacios();
+      }
+
+      // ========== Cargar Datos Iniciales ==========
+      async function cargarDatos() {
+        await Promise.all([
+          cargarMetricas(),
+          cargarMetricasTurno(),
+          cargarEspacios(),
+        ]);
+      }
+
+      // ========== Métricas ==========
+      async function cargarMetricas() {
+        try {
+          const m = await api.getMetricas();
+          document.getElementById("totalSesiones").textContent =
+            m.total_sesiones || 0;
+          document.getElementById("pagadas").textContent = m.pagadas || 0;
+          document.getElementById("pendientes").textContent = m.pendientes || 0;
+          document.getElementById("ingresos").textContent = `S/ ${(
+            m.ingresos_totales || 0
+          ).toFixed(2)}`;
+        } catch (error) {
+          console.error("Error al cargar métricas:", error);
+        }
+      }
+
+      // ========== Métricas por Turno ==========
+      async function cargarMetricasTurno() {
+        try {
+          const turnos = await api.getMetricasPorTurno();
+          const tbody = document.getElementById("turnosBody");
+
+          if (turnos.length === 0) {
+            tbody.innerHTML =
+              '<tr><td colspan="3" class="empty-state">Sin datos</td></tr>';
+            return;
+          }
+
+          tbody.innerHTML = turnos
+            .map(
+              (t) => `
+          <tr>
+            <td style="text-transform: capitalize;"><strong>${
+              t.nombre_turno
+            }</strong></td>
+            <td>${t.sesiones || 0}</td>
+            <td><strong>S/ ${(t.ingresos || 0).toFixed(2)}</strong></td>
+          </tr>
+        `
+            )
+            .join("");
+        } catch (error) {
+          console.error("Error al cargar turnos:", error);
+        }
+      }
+
+      // ========== Historial ==========
+      async function cargarHistorial() {
+        try {
+          const fecha = document.getElementById("filtroFecha").value;
+          const estado = document.getElementById("filtroEstado").value;
+
+          datosHistorial = await api.getHistorial(estado, fecha);
+          const tbody = document.getElementById("historialBody");
+
+          if (datosHistorial.length === 0) {
+            tbody.innerHTML =
+              '<tr><td colspan="8" class="empty-state">No hay sesiones</td></tr>';
+            document.getElementById("resumenHistorial").innerHTML = "";
+            return;
+          }
+
+          const pagadas = datosHistorial.filter((s) => s.pago === 1).length;
+          const pendientes = datosHistorial.filter(
+            (s) => s.pago === 0 && s.hora_salida
+          ).length;
+          const activas = datosHistorial.filter((s) => !s.hora_salida).length;
+
+          document.getElementById("resumenHistorial").innerHTML = `
+          ${fecha ? `<strong>Fecha:</strong> ${fecha} | ` : ""}
+          <strong>Total:</strong> ${datosHistorial.length} | 
+          <strong>Pagadas:</strong> ${pagadas} | 
+          <strong>Pendientes:</strong> ${pendientes} | 
+          <strong>Activas:</strong> ${activas}
+        `;
+
+          tbody.innerHTML = datosHistorial
+            .map(
+              (s) => `
+          <tr>
+            <td>#${s.id_sesion}</td>
+            <td>E${s.numero}</td>
+            <td style="text-transform: capitalize;">${s.nombre_turno}</td>
+            <td>${formatearFecha(s.hora_entrada)}</td>
+            <td>${formatearFecha(s.hora_salida)}</td>
+            <td>${calcularDuracion(s.hora_entrada, s.hora_salida)}</td>
+            <td><strong>S/ ${(s.total_tarifa || 0).toFixed(2)}</strong></td>
+            <td>
+              ${
+                s.pago === 1
+                  ? '<span class="celda-estado estado-pagada">✓ Pagada</span>'
+                  : ""
+              }
+              ${
+                s.pago === 0 && s.hora_salida
+                  ? '<span class="celda-estado estado-pendiente">⏳ Pendiente</span>'
+                  : ""
+              }
+              ${
+                !s.hora_salida
+                  ? '<span class="celda-estado estado-activa">▶ Activa</span>'
+                  : ""
+              }
+            </td>
+          </tr>
+        `
+            )
+            .join("");
+        } catch (error) {
+          console.error("Error al cargar historial:", error);
+          document.getElementById("historialBody").innerHTML =
+            '<tr><td colspan="8" class="loading">Error al cargar</td></tr>';
+        }
+      }
+
+      // ========== Reporte ==========
+      async function cargarReporte() {
+        try {
+          const inicio = document.getElementById("reporteFechaInicio").value;
+          const fin = document.getElementById("reporteFechaFin").value;
+
+          datosReporte = await api.getReporte(inicio, fin);
+          const tbody = document.getElementById("reporteBody");
+
+          if (datosReporte.length === 0) {
+            tbody.innerHTML =
+              '<tr><td colspan="9" class="empty-state">No hay datos para este período de tiempo</td></tr>';
+            return;
+          }
+
+          tbody.innerHTML = datosReporte
+            .map(
+              (r) => `
+          <tr>
+            <td><strong>${r.fecha}</strong></td>
+            <td style="text-transform: capitalize;">${r.nombre_turno}</td>
+            <td>${r.total_sesiones || 0}</td>
+            <td>${r.pagadas || 0}</td>
+            <td>${r.pendientes || 0}</td>
+            <td>${r.activas || 0}</td>
+            <td><strong>S/ ${(r.ingresos_pagados || 0).toFixed(2)}</strong></td>
+            <td><strong>S/ ${(r.ingresos_pendientes || 0).toFixed(
+              2
+            )}</strong></td>
+            <td><span class="tiempo-promedio">${(
+              r.tiempo_promedio || 0
+            ).toFixed(0)} min</span></td>
+          </tr>
+        `
+            )
+            .join("");
+        } catch (error) {
+          console.error("Error al cargar reporte:", error);
+          document.getElementById("reporteBody").innerHTML =
+            '<tr><td colspan="9" class="loading">Error al cargar</td></tr>';
+        }
+      }
+
+      // ========== Espacios ==========
+      async function cargarEspacios() {
+        try {
+          const espacios = await api.getEspacios();
+          const grid = document.getElementById("espaciosGrid");
+
+          const disponibles = espacios.filter(
+            (e) => e.estado === "disponible"
+          ).length;
+          const ocupados = espacios.filter(
+            (e) => e.estado === "ocupado"
+          ).length;
+
+          grid.innerHTML = `
+          <div style="grid-column: 1 / -1; margin-bottom: 1rem; color: var(--gray-600);">
+            <strong>${disponibles}</strong> disponibles · <strong>${ocupados}</strong> ocupados
+          </div>
+          ${espacios
+            .map(
+              (e) => `
+            <div class="espacio ${e.estado}" style="cursor: default;">
+              <span class="numero">${e.numero}</span>
+              <span class="estado">${e.estado}</span>
+            </div>
+          `
+            )
+            .join("")}
+        `;
+        } catch (error) {
+          console.error("Error al cargar espacios:", error);
+        }
+      }
+
+      // ========== Utilidades ==========
+      function formatearFecha(fecha) {
+        if (!fecha) return "-";
+        const d = new Date(fecha);
+        return d.toLocaleString("es-PE", {
+          day: "2-digit",
+          month: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+
+      function calcularDuracion(entrada, salida) {
+        if (!entrada || !salida) return "-";
+        const ms = new Date(salida) - new Date(entrada);
+        const minutos = Math.floor(ms / 60000);
+        const horas = Math.floor(minutos / 60);
+        const mins = minutos % 60;
+        return horas > 0 ? `${horas}h ${mins}m` : `${mins}m`;
+      }
+
+      function exportarCSV(datos, filename) {
+        if (datos.length === 0) {
+          alert("No hay datos para exportar");
+          return;
+        }
+
+        const keys = Object.keys(datos[0]);
+        const csv = [
+          keys.join(","),
+          ...datos.map((row) => keys.map((k) => `"${row[k]}"`).join(",")),
+        ].join("\n");
+
+        const blob = new Blob([csv], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        a.click();
+      }
+
+      function exportarHistorial() {
+        exportarCSV(datosHistorial, "historial.csv");
+      }
+
+      function exportarReporte() {
+        exportarCSV(datosReporte, "reporte.csv");
+      }
+
+      // ========== Logout ==========
+      document
+        .getElementById("btnLogout")
+        .addEventListener("click", async () => {
+          await api.logout();
+          window.location.href = "index.html";
+        });
+
+      // ========== Auto-refresh ==========
+      setInterval(() => {
+        if (
+          document
+            .querySelector(".tab-btn.active")
+            .textContent.includes("Resumen")
+        ) {
+          cargarDatos();
+        }
+      }, 30000);
+    </script>
+  </body>
+</html>
+/body>
 </html>
