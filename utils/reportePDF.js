@@ -1,351 +1,481 @@
-const PDFDocument = require('pdfkit');
-const fs = require('fs');
-const path = require('path');
+const PDFDocument = require("pdfkit");
+const fs = require("fs");
+const path = require("path");
 
 class ReportePDF {
   constructor() {
     this.doc = null;
     this.pageNumber = 1;
+    this.margenIzq = 40;
+    this.margenDer = 555;
+    this.altoUltilmo = 730;
   }
 
-  crearReporte(datos, nombreArchivo = 'reporte.pdf') {
-    this.doc = new PDFDocument({
-      margin: 40,
-      size: 'A4'
-    });
-
-    // Crear directorio si no existe
-    const dirReportes = path.join(__dirname, '../public/reportes');
-    if (!fs.existsSync(dirReportes)) {
-      fs.mkdirSync(dirReportes, { recursive: true });
-    }
-
-    const rutaArchivo = path.join(dirReportes, nombreArchivo);
-    const stream = fs.createWriteStream(rutaArchivo);
-    this.doc.pipe(stream);
-
-    // Encabezado
-    this.agregarEncabezado(datos.titulo);
-    
-    // Info general
-    if (datos.fechas) {
-      this.agregarInfoGeneral(datos.fechas);
-    }
-
-    // Resumen
-    if (datos.resumen) {
-      this.agregarResumen(datos.resumen);
-    }
-
-    // Tabla de reportes
-    if (datos.detalles && datos.detalles.length > 0) {
-      this.agregarTablaReportes(datos.detalles);
-    }
-
-    // Tabla de historial (si existe)
-    if (datos.historial && datos.historial.length > 0) {
-      this.agregarTablaHistorial(datos.historial);
-    }
-
-    // Pie de página
-    this.agregarPiePagina();
-
-    this.doc.end();
-
+  async crearReporte(datos, nombreArchivo = "reporte.pdf") {
     return new Promise((resolve, reject) => {
-      stream.on('finish', () => resolve(nombreArchivo));
-      stream.on('error', reject);
-    });
-  }
-
-  agregarEncabezado(titulo) {
-    // Logo/Titulo
-    this.doc
-      .fontSize(28)
-      .font('Helvetica-Bold')
-      .text('🅿️ SISTEMA DE ESTACIONAMIENTO', { align: 'center' });
-
-    this.doc.moveDown(0.3);
-    this.doc
-      .fontSize(16)
-      .font('Helvetica')
-      .text(titulo, { align: 'center' });
-
-    // Línea separadora
-    this.doc.moveDown(0.5);
-    this.doc.strokeColor('#3b82f6').lineWidth(2).moveTo(40, this.doc.y).lineTo(555, this.doc.y).stroke();
-    this.doc.moveDown(0.8);
-  }
-
-  agregarInfoGeneral(fechas) {
-    const { inicio, fin, generado } = fechas;
-    
-    this.doc
-      .fontSize(10)
-      .font('Helvetica')
-      .fillColor('#666666');
-
-    const y = this.doc.y;
-    
-    // Columna izquierda
-    this.doc
-      .text(`Período: ${inicio} a ${fin}`, 40, y)
-      .text(`Generado: ${generado}`, 40, this.doc.y + 5);
-
-    // Columna derecha
-    this.doc
-      .text(`Página: 1`, 450, y, { align: 'right' });
-
-    this.doc.moveDown(1.5);
-    this.doc.fillColor('#000000');
-  }
-
-  agregarResumen(resumen) {
-    this.doc
-      .fontSize(12)
-      .font('Helvetica-Bold')
-      .fillColor('#1f2937')
-      .text('RESUMEN GENERAL', { underline: true });
-
-    this.doc.moveDown(0.5);
-
-    // Cajas de resumen
-    const anchoCaja = 110;
-    const espaciado = 8;
-    const x = 40;
-    let posX = x;
-
-    const datos = [
-      { label: 'Total Sesiones', valor: resumen.total_sesiones, color: '#3b82f6' },
-      { label: 'Pagadas', valor: resumen.pagadas, color: '#22c55e' },
-      { label: 'Pendientes', valor: resumen.pendientes, color: '#f59e0b' },
-      { label: 'Activas', valor: resumen.activas, color: '#ef4444' }
-    ];
-
-    datos.forEach((d, idx) => {
-      if (idx > 0 && idx % 2 === 0) {
-        posX = x;
-        this.doc.moveDown(3.5);
-      }
-
-      this.dibujarCajaResumen(posX, this.doc.y, anchoCaja, d.label, d.valor, d.color);
-      posX += anchoCaja + espaciado;
-    });
-
-    this.doc.moveDown(4);
-  }
-
-  dibujarCajaResumen(x, y, ancho, label, valor, color) {
-    // Fondo
-    this.doc.rect(x, y, ancho, 70).fillAndStroke(color + '15', color);
-
-    // Texto
-    this.doc
-      .fontSize(9)
-      .font('Helvetica')
-      .fillColor('#666666')
-      .text(label, x + 8, y + 10, { width: ancho - 16, align: 'center' });
-
-    this.doc
-      .fontSize(20)
-      .font('Helvetica-Bold')
-      .fillColor(color)
-      .text(valor.toString(), x + 8, y + 30, { width: ancho - 16, align: 'center' });
-  }
-
-  agregarTablaReportes(datos) {
-    this.verificarEspacioPagina(80);
-
-    this.doc
-      .fontSize(12)
-      .font('Helvetica-Bold')
-      .fillColor('#1f2937')
-      .text('REPORTE DETALLADO', { underline: true });
-
-    this.doc.moveDown(0.8);
-
-    const columnas = [
-      { key: 'fecha', titulo: 'Fecha', ancho: 70 },
-      { key: 'nombre_turno', titulo: 'Turno', ancho: 60 },
-      { key: 'total_sesiones', titulo: 'Total', ancho: 45 },
-      { key: 'pagadas', titulo: 'Pagadas', ancho: 45 },
-      { key: 'pendientes', titulo: 'Pendientes', ancho: 50 },
-      { key: 'activas', titulo: 'Activas', ancho: 45 },
-      { key: 'ingresos_pagados', titulo: 'Ingresos', ancho: 70 }
-    ];
-
-    const y = this.doc.y;
-    let posX = 40;
-
-    // Encabezado tabla
-    this.doc
-      .fontSize(9)
-      .font('Helvetica-Bold')
-      .fillColor('white');
-
-    columnas.forEach(col => {
-      this.doc.rect(posX, y, col.ancho, 25).fill('#3b82f6');
-      this.doc
-        .fillColor('white')
-        .text(col.titulo, posX + 5, y + 7, { width: col.ancho - 10, align: 'center' });
-      posX += col.ancho;
-    });
-
-    this.doc.moveDown(1.8);
-
-    // Filas
-    let alturaFila = 20;
-    datos.forEach((fila, idx) => {
-      if (this.doc.y + alturaFila > 750) {
-        this.agregarPaginaNueva();
-      }
-
-      posX = 40;
-      const yFila = this.doc.y;
-      const colorFondo = idx % 2 === 0 ? '#f9fafb' : 'white';
-
-      columnas.forEach(col => {
-        this.doc.rect(posX, yFila, col.ancho, alturaFila).fill(colorFondo);
-        
-        let valor = fila[col.key];
-        if (col.key.includes('ingresos') || col.key === 'total_tarifa') {
-          valor = `S/ ${parseFloat(valor || 0).toFixed(2)}`;
+      try {
+        const dirReportes = path.join(__dirname, "../public/reportes");
+        if (!fs.existsSync(dirReportes)) {
+          fs.mkdirSync(dirReportes, { recursive: true });
         }
 
-        this.doc
-          .fontSize(8)
-          .font('Helvetica')
-          .fillColor('#1f2937')
-          .text(valor.toString(), posX + 5, yFila + 6, { 
-            width: col.ancho - 10, 
-            align: 'center' 
-          });
+        const rutaArchivo = path.join(dirReportes, nombreArchivo);
 
-        posX += col.ancho;
-      });
+        this.doc = new PDFDocument({
+          margin: 30,
+          size: "A4",
+        });
 
-      this.doc.moveDown(1.3);
+        const stream = fs.createWriteStream(rutaArchivo);
+        this.doc.pipe(stream);
+
+        // Determinar tipo de reporte
+        const esHistorial =
+          datos.detalles &&
+          datos.detalles[0] &&
+          datos.detalles[0].id_sesion &&
+          datos.detalles[0].numero;
+
+        if (esHistorial) {
+          this.crearReporteHistorial(datos);
+        } else {
+          this.crearReporteGeneral(datos);
+        }
+
+        this.doc.end();
+
+        stream.on("finish", () => resolve(nombreArchivo));
+        stream.on("error", reject);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  // ========== REPORTE HISTORIAL ==========
+  crearReporteHistorial(datos) {
+    this.encabezadoPrincipal();
+    this.tituloReporte(datos.titulo);
+    this.seccionFechas(datos.fechas);
+    this.seccionResumenHistorial(datos.resumen);
+    this.doc.moveDown(0.5);
+    this.tablaHistorial(datos.detalles);
+    this.piePagina();
+  }
+
+  // ========== REPORTE GENERAL ==========
+  crearReporteGeneral(datos) {
+    this.encabezadoPrincipal();
+    this.tituloReporte(datos.titulo);
+    this.seccionFechas(datos.fechas);
+    this.seccionResumenGeneral(datos.resumen);
+    this.doc.moveDown(0.5);
+    this.tablaReporte(datos.detalles);
+    this.piePagina();
+  }
+
+  // ========== ENCABEZADO PRINCIPAL ==========
+  encabezadoPrincipal() {
+    // Fondo azul
+    this.doc.rect(30, 30, 540, 80).fill("#3b82f6");
+
+    // Ícono y título
+    this.doc
+      .fontSize(32)
+      .font("Helvetica-Bold")
+      .fillColor("white")
+      .text("🅿️", 50, 45);
+
+    this.doc
+      .fontSize(24)
+      .font("Helvetica-Bold")
+      .fillColor("white")
+      .text("ESTACIONAMIENTO", 100, 50);
+
+    this.doc
+      .fontSize(11)
+      .font("Helvetica")
+      .fillColor("#e0e7ff")
+      .text("Sistema Inteligente de Reportes", 100, 78);
+
+    this.doc.moveDown(4.5);
+  }
+
+  // ========== TITULO REPORTE ==========
+  tituloReporte(titulo) {
+    this.doc
+      .fontSize(18)
+      .font("Helvetica-Bold")
+      .fillColor("#1f2937")
+      .text(titulo, 40);
+
+    this.doc
+      .strokeColor("#3b82f6")
+      .lineWidth(2)
+      .moveTo(40, this.doc.y)
+      .lineTo(555, this.doc.y)
+      .stroke();
+    this.doc.moveDown(0.8);
+  }
+
+  // ========== SECCIÓN FECHAS ==========
+  seccionFechas(fechas) {
+    const y = this.doc.y;
+
+    // Info box
+    this.doc.rect(40, y, 515, 50).fillAndStroke("#f0f9ff", "#3b82f6");
+
+    this.doc.fontSize(10).font("Helvetica").fillColor("#075985");
+
+    this.doc.text(`Período: ${fechas.inicio} hasta ${fechas.fin}`, 50, y + 10);
+    this.doc.text(`Generado: ${fechas.generado}`, 50, y + 28);
+    this.doc.text(`Página 1`, 480, y + 10, { width: 65, align: "right" });
+
+    this.doc.moveDown(3.5);
+  }
+
+  // ========== RESUMEN HISTORIAL ==========
+  seccionResumenHistorial(resumen) {
+    const datos = [
+      {
+        label: "Total Sesiones",
+        valor: resumen.total_sesiones,
+        color: "#3b82f6",
+        icon: "📊",
+      },
+      { label: "Pagadas", valor: resumen.pagadas, color: "#22c55e", icon: "✓" },
+      {
+        label: "Pendientes",
+        valor: resumen.pendientes,
+        color: "#f59e0b",
+        icon: "⏳",
+      },
+      { label: "Activas", valor: resumen.activas, color: "#ef4444", icon: "▶" },
+    ];
+
+    const y = this.doc.y;
+    const anchoCaja = 120;
+    let posX = 40;
+
+    this.doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .fillColor("#1f2937")
+      .text("RESUMEN", 40);
+
+    this.doc.moveDown(0.6);
+
+    datos.forEach((d, idx) => {
+      if (idx > 0 && idx % 3 === 0) {
+        posX = 40;
+      } else if (idx > 0) {
+        posX += anchoCaja + 12;
+      }
+
+      const cajaY = this.doc.y;
+      this.doc
+        .rect(posX, cajaY, anchoCaja, 70)
+        .fill(d.color + "15")
+        .strokeColor(d.color)
+        .lineWidth(1.5)
+        .stroke();
+
+      this.doc
+        .fontSize(20)
+        .font("Helvetica-Bold")
+        .fillColor(d.color)
+        .text(d.valor.toString(), posX + 5, cajaY + 10, {
+          width: anchoCaja - 10,
+          align: "center",
+        });
+
+      this.doc
+        .fontSize(9)
+        .font("Helvetica")
+        .fillColor("#4b5563")
+        .text(d.label, posX + 5, cajaY + 45, {
+          width: anchoCaja - 10,
+          align: "center",
+        });
+
+      if (idx % 3 === 0) {
+        this.doc.moveDown(4.2);
+      }
     });
 
     this.doc.moveDown(1);
   }
 
-  agregarTablaHistorial(datos) {
-    this.verificarEspacioPagina(80);
-
-    this.doc
-      .fontSize(12)
-      .font('Helvetica-Bold')
-      .fillColor('#1f2937')
-      .text('HISTORIAL DE SESIONES', { underline: true });
-
-    this.doc.moveDown(0.8);
-
-    const columnas = [
-      { key: 'id_sesion', titulo: 'ID', ancho: 40 },
-      { key: 'numero', titulo: 'Espacio', ancho: 50 },
-      { key: 'nombre_turno', titulo: 'Turno', ancho: 55 },
-      { key: 'hora_entrada', titulo: 'Entrada', ancho: 80 },
-      { key: 'hora_salida', titulo: 'Salida', ancho: 80 },
-      { key: 'total_tarifa', titulo: 'Tarifa', ancho: 50 },
-      { key: 'pago', titulo: 'Estado', ancho: 60 }
+  // ========== RESUMEN GENERAL ==========
+  seccionResumenGeneral(resumen) {
+    const datos = [
+      { label: "Total", valor: resumen.total_sesiones, color: "#3b82f6" },
+      { label: "Pagadas", valor: resumen.pagadas, color: "#22c55e" },
+      { label: "Pendientes", valor: resumen.pendientes, color: "#f59e0b" },
+      { label: "Activas", valor: resumen.activas, color: "#ef4444" },
     ];
 
-    const y = this.doc.y;
+    this.doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .fillColor("#1f2937")
+      .text("RESUMEN EJECUTIVO", 40);
+
+    this.doc.moveDown(0.6);
+
+    const anchoCaja = 110;
     let posX = 40;
 
-    // Encabezado
-    this.doc
-      .fontSize(8)
-      .font('Helvetica-Bold')
-      .fillColor('white');
+    datos.forEach((d, idx) => {
+      if (idx > 0 && idx % 4 === 0) {
+        posX = 40;
+        this.doc.moveDown(3.8);
+      } else if (idx > 0) {
+        posX += anchoCaja + 10;
+      }
 
-    columnas.forEach(col => {
-      this.doc.rect(posX, y, col.ancho, 22).fill('#3b82f6');
+      const cajaY = this.doc.y;
       this.doc
-        .fillColor('white')
-        .text(col.titulo, posX + 3, y + 6, { width: col.ancho - 6, align: 'center' });
-      posX += col.ancho;
+        .rect(posX, cajaY, anchoCaja, 60)
+        .fill(d.color + "15")
+        .strokeColor(d.color)
+        .lineWidth(1.5)
+        .stroke();
+
+      this.doc
+        .fontSize(18)
+        .font("Helvetica-Bold")
+        .fillColor(d.color)
+        .text(d.valor.toString(), posX + 5, cajaY + 8, {
+          width: anchoCaja - 10,
+          align: "center",
+        });
+
+      this.doc
+        .fontSize(9)
+        .font("Helvetica")
+        .fillColor("#4b5563")
+        .text(d.label, posX + 5, cajaY + 38, {
+          width: anchoCaja - 10,
+          align: "center",
+        });
+
+      if (idx % 4 === 3 || idx === datos.length - 1) {
+        this.doc.moveDown(3.8);
+      }
     });
 
-    this.doc.moveDown(1.7);
+    this.doc.moveDown(0.5);
+  }
 
-    // Filas (límite de 20 para no saturar)
-    const datosLimitados = datos.slice(0, 20);
-    let alturaFila = 18;
+  // ========== TABLA HISTORIAL ==========
+  tablaHistorial(datos) {
+    if (!datos || datos.length === 0) {
+      this.doc
+        .fontSize(11)
+        .font("Helvetica")
+        .fillColor("#999")
+        .text("No hay datos disponibles");
+      return;
+    }
 
-    datosLimitados.forEach((fila, idx) => {
-      if (this.doc.y + alturaFila > 750) {
-        this.agregarPaginaNueva();
+    this.doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .fillColor("#1f2937")
+      .text("DETALLE DE SESIONES", 40);
+
+    this.doc.moveDown(0.6);
+
+    const columnas = [
+      { key: "id_sesion", titulo: "ID", ancho: 35 },
+      { key: "numero", titulo: "Espacio", ancho: 50 },
+      { key: "nombre_turno", titulo: "Turno", ancho: 50 },
+      { key: "hora_entrada", titulo: "Entrada", ancho: 70 },
+      { key: "hora_salida", titulo: "Salida", ancho: 70 },
+      { key: "total_tarifa", titulo: "Tarifa", ancho: 50 },
+      { key: "pago", titulo: "Estado", ancho: 45 },
+    ];
+
+    this.dibujarTabla(columnas, datos, "historial");
+  }
+
+  // ========== TABLA REPORTE ==========
+  tablaReporte(datos) {
+    if (!datos || datos.length === 0) {
+      this.doc
+        .fontSize(11)
+        .font("Helvetica")
+        .fillColor("#999")
+        .text("No hay datos disponibles");
+      return;
+    }
+
+    this.doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .fillColor("#1f2937")
+      .text("RESUMEN POR PERÍODO", 40);
+
+    this.doc.moveDown(0.6);
+
+    const columnas = [
+      { key: "fecha", titulo: "Fecha", ancho: 55 },
+      { key: "nombre_turno", titulo: "Turno", ancho: 50 },
+      { key: "total_sesiones", titulo: "Total", ancho: 40 },
+      { key: "pagadas", titulo: "Pagadas", ancho: 40 },
+      { key: "pendientes", titulo: "Pend.", ancho: 40 },
+      { key: "activas", titulo: "Activas", ancho: 40 },
+      { key: "ingresos_pagados", titulo: "Ingresos", ancho: 60 },
+      { key: "tiempo_promedio", titulo: "Tiempo", ancho: 40 },
+    ];
+
+    this.dibujarTabla(columnas, datos, "reporte");
+  }
+
+  // ========== DIBUJAR TABLA (GENÉRICA) ==========
+  dibujarTabla(columnas, datos, tipo) {
+    const anchoTotal = columnas.reduce((sum, c) => sum + c.ancho, 0);
+    const escala = (555 - 40) / anchoTotal;
+
+    let posY = this.doc.y;
+    let posX = 40;
+
+    // ENCABEZADO
+    this.doc.fontSize(9).font("Helvetica-Bold").fillColor("white");
+
+    columnas.forEach((col) => {
+      const anchoAjustado = col.ancho * escala;
+      this.doc.rect(posX, posY, anchoAjustado, 25).fill("#3b82f6");
+
+      this.doc.fontSize(8).text(col.titulo, posX + 3, posY + 8, {
+        width: anchoAjustado - 6,
+        align: "center",
+        height: 25,
+      });
+
+      posX += anchoAjustado;
+    });
+
+    this.doc.moveDown(1.8);
+    posY = this.doc.y;
+
+    // FILAS
+    const altoFila = 18;
+    let numFila = 0;
+
+    for (let i = 0; i < Math.min(datos.length, 25); i++) {
+      const fila = datos[i];
+
+      // Verificar si cabe en página
+      if (posY + altoFila > this.altoUltilmo) {
+        this.doc.addPage();
+        posY = 40;
+        numFila = 0;
       }
 
       posX = 40;
-      const yFila = this.doc.y;
-      const colorFondo = idx % 2 === 0 ? '#f9fafb' : 'white';
+      const colorFondo = numFila % 2 === 0 ? "#f9fafb" : "white";
 
-      columnas.forEach(col => {
-        this.doc.rect(posX, yFila, col.ancho, alturaFila).fill(colorFondo);
+      columnas.forEach((col) => {
+        const anchoAjustado = col.ancho * escala;
+        this.doc.rect(posX, posY, anchoAjustado, altoFila).fill(colorFondo);
 
-        let valor = fila[col.key];
-        
-        if (col.key === 'total_tarifa') {
-          valor = `S/ ${parseFloat(valor || 0).toFixed(2)}`;
-        } else if (col.key === 'hora_entrada' || col.key === 'hora_salida') {
-          valor = valor ? new Date(valor).toLocaleString('es-PE', {
-            day: '2-digit',
-            month: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-          }) : '-';
-        } else if (col.key === 'pago') {
-          valor = fila.pago === 1 ? '✓ Pagada' : (fila.hora_salida ? 'Pendiente' : 'Activa');
-        }
+        let valor = this.obtenerValor(fila, col.key, tipo);
 
         this.doc
           .fontSize(7)
-          .font('Helvetica')
-          .fillColor('#1f2937')
-          .text(valor.toString(), posX + 3, yFila + 5, { 
-            width: col.ancho - 6, 
-            align: 'center',
-            height: alturaFila
+          .font("Helvetica")
+          .fillColor("#1f2937")
+          .text(valor, posX + 3, posY + 4, {
+            width: anchoAjustado - 6,
+            align: "center",
+            height: altoFila,
           });
 
-        posX += col.ancho;
+        posX += anchoAjustado;
       });
 
-      this.doc.moveDown(1.2);
-    });
+      posY += altoFila;
+      numFila++;
+      this.doc.y = posY;
+    }
 
-    if (datos.length > 20) {
+    if (datos.length > 25) {
+      this.doc.moveDown(0.5);
       this.doc
         .fontSize(8)
-        .font('Helvetica-Oblique')
-        .fillColor('#999999')
-        .text(`... y ${datos.length - 20} sesiones más`, 40);
+        .font("Helvetica-Oblique")
+        .fillColor("#999")
+        .text(`... y ${datos.length - 25} registros más`, 40);
     }
+
+    this.doc.moveDown(1);
   }
 
-  agregarPiePagina() {
+  // ========== OBTENER VALOR CELDA ==========
+  obtenerValor(fila, key, tipo) {
+    let valor = fila[key];
+
+    if (valor === null || valor === undefined || valor === "") return "-";
+
+    // Moneda
+    if (key.includes("ingresos") || key === "total_tarifa") {
+      return `S/ ${parseFloat(valor).toFixed(2)}`;
+    }
+
+    // Fechas
+    if (key === "hora_entrada" || key === "hora_salida") {
+      return new Date(valor).toLocaleString("es-PE", {
+        day: "2-digit",
+        month: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+
+    // Estado de pago
+    if (key === "pago") {
+      return fila.pago === 1
+        ? "✓ Pagada"
+        : fila.hora_salida
+        ? "Pendiente"
+        : "Activa";
+    }
+
+    // Tiempo promedio
+    if (key === "tiempo_promedio") {
+      const minutos = Math.round(parseFloat(valor));
+      return `${minutos}m`;
+    }
+
+    // Turno
+    if (key === "nombre_turno") {
+      return valor.charAt(0).toUpperCase() + valor.slice(1);
+    }
+
+    return valor.toString();
+  }
+
+  // ========== PIE DE PÁGINA ==========
+  piePagina() {
     const y = 750;
-    
+
     this.doc
       .fontSize(8)
-      .font('Helvetica')
-      .fillColor('#999999')
-      .text('Reporte generado automáticamente por el Sistema de Estacionamiento Inteligente', 
-            40, y, { align: 'center' });
-  }
+      .font("Helvetica")
+      .fillColor("#999")
+      .text(
+        "Sistema de Estacionamiento Inteligente | Reporte Confidencial",
+        40,
+        y,
+        { align: "center" }
+      );
 
-  verificarEspacioPagina(espacioRequerido) {
-    if (this.doc.y + espacioRequerido > 750) {
-      this.agregarPaginaNueva();
-    }
-  }
-
-  agregarPaginaNueva() {
-    this.doc.addPage();
-    this.pageNumber++;
+    this.doc
+      .fontSize(8)
+      .fillColor("#ccc")
+      .text(`Página ${this.pageNumber}`, 500, y, { align: "right" });
   }
 }
 
