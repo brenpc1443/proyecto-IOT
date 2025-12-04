@@ -73,8 +73,8 @@ class ReportePDF {
     this.doc
       .fontSize(22)
       .font("Helvetica-Bold")
-      .fillColor("#1f2937")
-      .text("📋 HISTORIAL COMPLETO DE SESIONES", { align: "center" });
+      .fillColor("#ef4444")
+      .text("HISTORIAL COMPLETO DE SESIONES", { align: "center" });
 
     this.doc.moveDown(0.5);
     this.doc
@@ -102,7 +102,7 @@ class ReportePDF {
         .fontSize(13)
         .font("Helvetica-Oblique")
         .fillColor("#999")
-        .text("ℹ️  No hay sesiones registradas para este período", {
+        .text("No hay sesiones registradas para este periodo", {
           align: "center",
         });
     }
@@ -124,8 +124,8 @@ class ReportePDF {
     this.doc
       .fontSize(22)
       .font("Helvetica-Bold")
-      .fillColor("#1f2937")
-      .text("📊 REPORTE GENERAL DE ESTACIONAMIENTO", { align: "center" });
+      .fillColor("#3b82f6")
+      .text("REPORTE GENERAL DE ESTACIONAMIENTO", { align: "center" });
 
     this.doc.moveDown(0.5);
     this.doc
@@ -157,7 +157,7 @@ class ReportePDF {
         .fontSize(13)
         .font("Helvetica-Oblique")
         .fillColor("#999")
-        .text("ℹ️  No hay datos disponibles para este período", {
+        .text("No hay datos disponibles para este periodo", {
           align: "center",
         });
     }
@@ -167,7 +167,7 @@ class ReportePDF {
   }
 
   // ========================================
-  // COMPONENTES
+  // COMPONENTES COMPARTIDOS
   // ========================================
 
   headerPrincipal() {
@@ -176,7 +176,7 @@ class ReportePDF {
       .fontSize(28)
       .font("Helvetica-Bold")
       .fillColor("white")
-      .text("🅿️ ESTACIONAMIENTO", 45, 38);
+      .text("ESTACIONAMIENTO", 45, 38);
     this.doc
       .fontSize(9)
       .font("Helvetica")
@@ -193,12 +193,19 @@ class ReportePDF {
 
     this.doc.fontSize(10).font("Helvetica").fillColor("#075985");
 
-    this.doc.text(`Período: ${fechas.inicio} hasta ${fechas.fin}`, 50, y + 10);
-    this.doc.text(`Generado: ${fechas.generado}`, 50, y + 28);
+    this.doc.text(
+      "Periodo: " + fechas.inicio + " hasta " + fechas.fin,
+      50,
+      y + 10
+    );
+    this.doc.text("Generado: " + fechas.generado, 50, y + 28);
 
     this.doc.moveDown(3.5);
   }
 
+  // ========================================
+  // RESUMEN HISTORIAL
+  // ========================================
   dibujarResumenHistorial(resumen) {
     this.doc
       .fontSize(13)
@@ -207,7 +214,6 @@ class ReportePDF {
       .text("RESUMEN EJECUTIVO", 40);
     this.doc.moveDown(0.5);
 
-    // Tabla de resumen simple
     const y = this.doc.y;
     const col1 = 40;
     const col2 = 250;
@@ -223,13 +229,12 @@ class ReportePDF {
 
     this.doc.fontSize(10).font("Helvetica-Bold").fillColor("#1f2937");
 
-    this.doc.text("Métrica", col1, y + 8);
+    this.doc.text("Metrica", col1, y + 8);
     this.doc.text("Cantidad", col2, y + 8);
     this.doc.text("Porcentaje", col3, y + 8);
 
     let posY = y + 25;
 
-    // Filas
     const items = [
       { label: "Total Sesiones", valor: resumen.total_sesiones || 0 },
       { label: "Pagadas", valor: resumen.pagadas || 0 },
@@ -269,15 +274,17 @@ class ReportePDF {
     this.doc.moveDown(1);
   }
 
+  // ========================================
+  // RESUMEN GENERAL
+  // ========================================
   dibujarResumenGeneral(resumen) {
     this.doc
       .fontSize(13)
       .font("Helvetica-Bold")
       .fillColor("#1f2937")
-      .text("MÉTRICAS PRINCIPALES", 40);
+      .text("METRICAS PRINCIPALES", 40);
     this.doc.moveDown(0.5);
 
-    // Tabla de resumen simple
     const y = this.doc.y;
     const col1 = 40;
     const col2 = 250;
@@ -293,13 +300,12 @@ class ReportePDF {
 
     this.doc.fontSize(10).font("Helvetica-Bold").fillColor("#1f2937");
 
-    this.doc.text("Métrica", col1, y + 8);
+    this.doc.text("Metrica", col1, y + 8);
     this.doc.text("Cantidad", col2, y + 8);
     this.doc.text("Porcentaje", col3, y + 8);
 
     let posY = y + 25;
 
-    // Filas
     const items = [
       { label: "Total Sesiones", valor: resumen.total_sesiones || 0 },
       { label: "Pagadas", valor: resumen.pagadas || 0 },
@@ -339,6 +345,9 @@ class ReportePDF {
     this.doc.moveDown(1);
   }
 
+  // ========================================
+  // TABLA HISTORIAL
+  // ========================================
   tablaHistorial(datos) {
     this.doc
       .fontSize(11)
@@ -360,6 +369,9 @@ class ReportePDF {
     this.dibujarTabla(cols, datos);
   }
 
+  // ========================================
+  // TABLA REPORTE
+  // ========================================
   tablaReporte(datos) {
     this.doc
       .fontSize(11)
@@ -382,6 +394,9 @@ class ReportePDF {
     this.dibujarTabla(cols, datos);
   }
 
+  // ========================================
+  // DIBUJAR TABLA GENÉRICA
+  // ========================================
   dibujarTabla(cols, datos) {
     const totalAncho = cols.reduce((s, c) => s + c.ancho, 0);
     const escala = 515 / totalAncho;
@@ -441,11 +456,14 @@ class ReportePDF {
     this.doc.moveDown(1);
   }
 
+  // ========================================
+  // FORMATO DE VALORES
+  // ========================================
   formato(valor, clave) {
-    if (!valor) return "-";
+    if (!valor && valor !== 0) return "-";
 
     if (clave.includes("ingresos") || clave === "total_tarifa") {
-      return `S/ ${parseFloat(valor).toFixed(2)}`;
+      return "S/ " + parseFloat(valor).toFixed(2);
     }
 
     if (clave === "hora_entrada" || clave === "hora_salida") {
@@ -462,7 +480,7 @@ class ReportePDF {
     }
 
     if (clave === "pago") {
-      return valor === 1 ? "✓ Pagada" : "Pendiente";
+      return valor === 1 ? "Pagada" : "Pendiente";
     }
 
     if (clave === "tiempo_promedio") {
@@ -476,6 +494,9 @@ class ReportePDF {
     return String(valor);
   }
 
+  // ========================================
+  // PIE DE PÁGINA
+  // ========================================
   piePagina() {
     this.doc
       .fontSize(8)

@@ -738,6 +738,7 @@
         );
       }
 
+      // ========== Exportar Historial a PDF ==========
       async function exportarHistorialPDF(btn) {
         try {
           btn.classList.add("loading");
@@ -768,6 +769,7 @@
         }
       }
 
+      // ========== Exportar Reporte a PDF ==========
       async function exportarReportePDF(btn) {
         try {
           btn.classList.add("loading");
@@ -800,6 +802,7 @@
 
           console.log("Exportando reporte de", inicio, "a", fin);
 
+          // IMPORTANTE: Enviar tipo "reporte" para diferenciarlo de historial
           await api.getReportePDF(inicio, fin, "reporte");
 
           mostrarToast("PDF descargado correctamente");
