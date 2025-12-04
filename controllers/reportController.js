@@ -1,44 +1,95 @@
-const ReportePDF = require('../utils/reportePDF');
-const { db } = require('../config/database');
+const ReportePDF = require("../utils/reportePDF");
+const { db } = require("../config/database");
+const fs = require("fs");
+const path = require("path");
 
 const generarReportePDF = async (req, res) => {
   try {
     const { fecha_inicio, fecha_fin, tipo } = req.query;
-    
-    // Obtener datos del reporte
+
     let datos = [];
-    if (tipo === 'historial') {
+    let resumenData;
+
+    if (tipo === "historial") {
+      // Obtener historial
       datos = await obtenerHistorialDB(fecha_inicio, fecha_fin);
+
+      const pagadas = datos.filter((s) => s.pago === 1).length;
+      const pendientes = datos.filter(
+        (s) => s.pago === 0 && s.hora_salida
+      ).length;
+      const activas = datos.filter((s) => !s.hora_salida).length;
+
+      resumenData = {
+        titulo: "Historial de Sesiones",
+        fechas: {
+          inicio: fecha_inicio || "Sin especificar",
+          fin: fecha_fin || "Sin especificar",
+          generado: new Date().toLocaleString("es-PE"),
+        },
+        filtros: {
+          fecha: fecha_inicio || "",
+          estado: "",
+        },
+        resumen: {
+          total: datos.length,
+          pagadas,
+          pendientes,
+          activas,
+        },
+        detalles: datos,
+      };
+
+      const reporte = new ReportePDF();
+      const nombreArchivo = `historial_${Date.now()}.pdf`;
+      await reporte.crearReporteHistorial(resumenData, nombreArchivo);
+
+      res.download(
+        path.join(__dirname, `../public/reportes/${nombreArchivo}`),
+        nombreArchivo,
+        (err) => {
+          if (err) console.error(err);
+          // Opcional: limpiar archivo después de descargar
+          // setTimeout(() => {
+          //   fs.unlink(path.join(__dirname, `../public/reportes/${nombreArchivo}`), () => {});
+          // }, 5000);
+        }
+      );
     } else {
+      // Obtener reporte general
       datos = await obtenerReporteBD(fecha_inicio, fecha_fin);
+
+      const resumen = calcularResumen(datos);
+
+      resumenData = {
+        titulo: "Reporte General",
+        fechas: {
+          inicio: fecha_inicio || "Sin especificar",
+          fin: fecha_fin || "Sin especificar",
+          generado: new Date().toLocaleString("es-PE"),
+        },
+        resumen,
+        detalles: datos,
+      };
+
+      const reporte = new ReportePDF();
+      const nombreArchivo = `reporte_${Date.now()}.pdf`;
+      await reporte.crearReporteGeneral(resumenData, nombreArchivo);
+
+      res.download(
+        path.join(__dirname, `../public/reportes/${nombreArchivo}`),
+        nombreArchivo,
+        (err) => {
+          if (err) console.error(err);
+          // Opcional: limpiar archivo después de descargar
+          // setTimeout(() => {
+          //   fs.unlink(path.join(__dirname, `../public/reportes/${nombreArchivo}`), () => {});
+          // }, 5000);
+        }
+      );
     }
-
-    // Crear PDF
-    const reporte = new ReportePDF();
-    const nombreArchivo = `reporte_${Date.now()}.pdf`;
-    
-    const resumenData = {
-      titulo: tipo === 'historial' ? 'Historial de Sesiones' : 'Reporte General',
-      fechas: {
-        inicio: fecha_inicio || 'Sin especificar',
-        fin: fecha_fin || 'Sin especificar',
-        generado: new Date().toLocaleString('es-PE')
-      },
-      resumen: calcularResumen(datos),
-      detalles: datos,
-      ...(tipo === 'historial' && { historial: datos })
-    };
-
-    await reporte.crearReporte(resumenData, nombreArchivo);
-    
-    res.download(`public/reportes/${nombreArchivo}`, nombreArchivo, (err) => {
-      if (err) console.error(err);
-      // Opcional: eliminar archivo después de descargar
-      // fs.unlink(`public/reportes/${nombreArchivo}`, () => {});
-    });
-
   } catch (error) {
-    console.error('Error generando PDF:', error);
+    console.error("Error generando PDF:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -80,7 +131,8 @@ function obtenerReporteBD(inicio, fin) {
                    COUNT(CASE WHEN s.pago = 0 AND s.hora_salida IS NOT NULL THEN 1 END) as pendientes,
                    COUNT(CASE WHEN s.hora_salida IS NULL THEN 1 END) as activas,
                    SUM(CASE WHEN s.pago = 1 THEN s.total_tarifa ELSE 0 END) as ingresos_pagados,
-                   SUM(CASE WHEN s.pago = 0 AND s.hora_salida IS NOT NULL THEN s.total_tarifa ELSE 0 END) as ingresos_pendientes
+                   SUM(CASE WHEN s.pago = 0 AND s.hora_salida IS NOT NULL THEN s.total_tarifa ELSE 0 END) as ingresos_pendientes,
+                   AVG(CAST((julianday(s.hora_salida) - julianday(s.hora_entrada)) * 1440 AS REAL)) as tiempo_promedio
                  FROM sesion s
                  JOIN turno t ON s.id_turno = t.id_turno
                  WHERE 1=1`;
@@ -96,7 +148,7 @@ function obtenerReporteBD(inicio, fin) {
     }
 
     query += ` GROUP BY DATE(s.hora_entrada), t.nombre_turno
-               ORDER BY DATE(s.hora_entrada) DESC`;
+               ORDER BY DATE(s.hora_entrada) DESC, t.nombre_turno`;
 
     db.all(query, params, (err, rows) => {
       if (err) reject(err);
@@ -106,13 +158,24 @@ function obtenerReporteBD(inicio, fin) {
 }
 
 function calcularResumen(datos) {
-  const resumen = {
-    total_sesiones: datos.length,
-    pagadas: datos.filter(d => d.pago === 1).length,
-    pendientes: datos.filter(d => d.pago === 0 && d.hora_salida).length,
-    activas: datos.filter(d => !d.hora_salida).length
+  let totalSesiones = 0;
+  let totalPagadas = 0;
+  let totalPendientes = 0;
+  let totalActivas = 0;
+
+  datos.forEach((d) => {
+    totalSesiones += d.total_sesiones || 0;
+    totalPagadas += d.pagadas || 0;
+    totalPendientes += d.pendientes || 0;
+    totalActivas += d.activas || 0;
+  });
+
+  return {
+    total_sesiones: totalSesiones,
+    pagadas: totalPagadas,
+    pendientes: totalPendientes,
+    activas: totalActivas,
   };
-  return resumen;
 }
 
 module.exports = { generarReportePDF };
