@@ -7,11 +7,18 @@ const generarReportePDF = async (req, res) => {
   try {
     const { fecha_inicio, fecha_fin, tipo } = req.query;
 
+    // Validar que al menos tenga una fecha
+    if (!fecha_inicio && !fecha_fin) {
+      return res.status(400).json({
+        error: "Debe especificar fecha_inicio o fecha_fin",
+      });
+    }
+
     let datos = [];
     let resumenData;
 
     if (tipo === "historial") {
-      // Obtener historial
+      // Obtener historial completo
       datos = await obtenerHistorialDB(fecha_inicio, fecha_fin);
 
       const pagadas = datos.filter((s) => s.pago === 1).length;
@@ -23,71 +30,66 @@ const generarReportePDF = async (req, res) => {
       resumenData = {
         titulo: "Historial de Sesiones",
         fechas: {
-          inicio: fecha_inicio || "Sin especificar",
-          fin: fecha_fin || "Sin especificar",
+          inicio: fecha_inicio || "Inicio",
+          fin: fecha_fin || "Hoy",
           generado: new Date().toLocaleString("es-PE"),
         },
-        filtros: {
-          fecha: fecha_inicio || "",
-          estado: "",
-        },
         resumen: {
-          total: datos.length,
+          total_sesiones: datos.length,
           pagadas,
           pendientes,
           activas,
         },
         detalles: datos,
       };
-
-      const reporte = new ReportePDF();
-      const nombreArchivo = `historial_${Date.now()}.pdf`;
-      await reporte.crearReporteHistorial(resumenData, nombreArchivo);
-
-      res.download(
-        path.join(__dirname, `../public/reportes/${nombreArchivo}`),
-        nombreArchivo,
-        (err) => {
-          if (err) console.error(err);
-          // Opcional: limpiar archivo después de descargar
-          // setTimeout(() => {
-          //   fs.unlink(path.join(__dirname, `../public/reportes/${nombreArchivo}`), () => {});
-          // }, 5000);
-        }
-      );
     } else {
-      // Obtener reporte general
+      // Obtener reporte por período (agrupado)
       datos = await obtenerReporteBD(fecha_inicio, fecha_fin);
+
+      if (datos.length === 0) {
+        return res.status(404).json({
+          error: "No hay datos para el período especificado",
+        });
+      }
 
       const resumen = calcularResumen(datos);
 
       resumenData = {
-        titulo: "Reporte General",
+        titulo: "Reporte General por Período",
         fechas: {
-          inicio: fecha_inicio || "Sin especificar",
-          fin: fecha_fin || "Sin especificar",
+          inicio: fecha_inicio || "Inicio",
+          fin: fecha_fin || "Hoy",
           generado: new Date().toLocaleString("es-PE"),
         },
         resumen,
         detalles: datos,
       };
-
-      const reporte = new ReportePDF();
-      const nombreArchivo = `reporte_${Date.now()}.pdf`;
-      await reporte.crearReporteGeneral(resumenData, nombreArchivo);
-
-      res.download(
-        path.join(__dirname, `../public/reportes/${nombreArchivo}`),
-        nombreArchivo,
-        (err) => {
-          if (err) console.error(err);
-          // Opcional: limpiar archivo después de descargar
-          // setTimeout(() => {
-          //   fs.unlink(path.join(__dirname, `../public/reportes/${nombreArchivo}`), () => {});
-          // }, 5000);
-        }
-      );
     }
+
+    // Generar PDF
+    const reporte = new ReportePDF();
+    const nombreArchivo = `reporte_${tipo}_${Date.now()}.pdf`;
+
+    await reporte.crearReporte(resumenData, nombreArchivo);
+
+    // Descargar archivo
+    const rutaArchivo = path.join(
+      __dirname,
+      `../public/reportes/${nombreArchivo}`
+    );
+
+    res.download(rutaArchivo, nombreArchivo, (err) => {
+      if (err) {
+        console.error("Error descargando archivo:", err);
+      }
+
+      // Opcional: eliminar archivo después de descargar (descomentar si lo necesita)
+      // setTimeout(() => {
+      //   if (fs.existsSync(rutaArchivo)) {
+      //     fs.unlinkSync(rutaArchivo);
+      //   }
+      // }, 5000);
+    });
   } catch (error) {
     console.error("Error generando PDF:", error);
     res.status(500).json({ error: error.message });
@@ -115,8 +117,12 @@ function obtenerHistorialDB(inicio, fin) {
     query += ` ORDER BY s.hora_entrada DESC`;
 
     db.all(query, params, (err, rows) => {
-      if (err) reject(err);
-      else resolve(rows || []);
+      if (err) {
+        console.error("Error en obtenerHistorialDB:", err);
+        reject(err);
+      } else {
+        resolve(rows || []);
+      }
     });
   });
 }
@@ -151,8 +157,12 @@ function obtenerReporteBD(inicio, fin) {
                ORDER BY DATE(s.hora_entrada) DESC, t.nombre_turno`;
 
     db.all(query, params, (err, rows) => {
-      if (err) reject(err);
-      else resolve(rows || []);
+      if (err) {
+        console.error("Error en obtenerReporteBD:", err);
+        reject(err);
+      } else {
+        resolve(rows || []);
+      }
     });
   });
 }
