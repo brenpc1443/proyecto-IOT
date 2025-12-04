@@ -1,603 +1,852 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reportes - Estacionamiento Inteligente</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #1a2332 0%, #2d3e50 100%);
-      min-height: 100vh;
-      padding: 2rem 1rem;
-    }
-
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-    }
-
-    .header {
-      background: white;
-      padding: 2rem;
-      border-radius: 15px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-      margin-bottom: 2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 1rem;
-    }
-
-    .header h1 {
-      font-size: 2rem;
-      color: #333;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .filters {
-      display: flex;
-      gap: 1rem;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    .filters input, .filters select {
-      padding: 0.8rem 1rem;
-      border: 2px solid #e0e0e0;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      transition: border-color 0.3s;
-    }
-
-    .filters input:focus, .filters select:focus {
-      outline: none;
-      border-color: #2563eb;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-    }
-
-    .btn {
-      padding: 0.8rem 1.5rem;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s;
-      font-size: 0.95rem;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-      color: white;
-    }
-
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
-    }
-
-    .btn-pdf {
-      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-      color: white;
-    }
-
-    .btn-pdf:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(220, 38, 38, 0.3);
-    }
-
-    .btn-csv {
-      background: linear-gradient(135deg, #059669 0%, #047857 100%);
-      color: white;
-    }
-
-    .btn-csv:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(5, 150, 105, 0.3);
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .stat-card {
-      background: white;
-      padding: 1.5rem;
-      border-radius: 12px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-      border-left: 5px solid;
-      transition: transform 0.3s, box-shadow 0.3s;
-    }
-
-    .stat-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
-    }
-
-    .stat-card.success { border-left-color: #10b981; }
-    .stat-card.primary { border-left-color: #2563eb; }
-    .stat-card.warning { border-left-color: #f59e0b; }
-    .stat-card.danger { border-left-color: #ef4444; }
-
-    .stat-label {
-      font-size: 0.85rem;
-      color: #666;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 0.5rem;
-    }
-
-    .stat-value {
-      font-size: 2.5rem;
-      font-weight: 700;
-      color: #333;
-    }
-
-    .stat-subtitle {
-      font-size: 0.8rem;
-      color: #999;
-      margin-top: 0.5rem;
-    }
-
-    .charts-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .chart-card {
-      background: white;
-      padding: 1.5rem;
-      border-radius: 12px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    }
-
-    .chart-card h3 {
-      margin-bottom: 1rem;
-      color: #333;
-      font-size: 1.1rem;
-    }
-
-    .table-card {
-      background: white;
-      padding: 1.5rem;
-      border-radius: 12px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-      overflow-x: auto;
-    }
-
-    .table-card h3 {
-      margin-bottom: 1rem;
-      color: #333;
-      font-size: 1.1rem;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    th {
-      background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
-      color: white;
-      padding: 1rem;
-      text-align: left;
-      font-weight: 600;
-      text-transform: uppercase;
-      font-size: 0.85rem;
-      letter-spacing: 0.5px;
-    }
-
-    td {
-      padding: 1rem;
-      border-bottom: 1px solid #e0e0e0;
-    }
-
-    tr:hover {
-      background: #f8f9fa;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 0.4rem 0.8rem;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-
-    .badge-pagada {
-      background: #d1fae5;
-      color: #065f46;
-    }
-
-    .badge-pendiente {
-      background: #fef3c7;
-      color: #92400e;
-    }
-
-    .badge-activa {
-      background: #e0e7ff;
-      color: #3730a3;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 3rem;
-      color: #999;
-    }
-
-    .empty-state img {
-      width: 100px;
-      opacity: 0.5;
-      margin-bottom: 1rem;
-    }
-
-    .loading {
-      text-align: center;
-      padding: 2rem;
-      color: #999;
-    }
-
-    .spinner {
-      display: inline-block;
-      width: 30px;
-      height: 30px;
-      border: 3px solid #e0e0e0;
-      border-top-color: #667eea;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    /* PDF Styles */
-    .pdf-content {
-      background: white;
-      padding: 0;
-      border-radius: 0;
-      box-shadow: none;
-    }
-
-    @media print {
-      body {
-        background: white;
-        padding: 0;
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Panel Admin - Estacionamiento</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <style>
+      .tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid var(--gray-200);
       }
-      .header, .filters, .btn {
+
+      .tab-btn {
+        background: none;
+        border: none;
+        padding: 1rem;
+        cursor: pointer;
+        font-weight: 500;
+        color: var(--gray-600);
+        border-bottom: 3px solid transparent;
+        transition: all 0.2s;
+      }
+
+      .tab-btn.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+      }
+
+      .tab-btn:hover {
+        color: var(--primary);
+      }
+
+      .tab-content {
         display: none;
       }
-      .stats-grid, .charts-grid, .table-card {
-        page-break-inside: avoid;
-      }
-    }
 
-    .action-buttons {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <!-- Header -->
-    <div class="header">
-      <h1>📊 Reportes de Estacionamiento</h1>
-      <div class="filters">
-        <input type="date" id="fechaInicio">
-        <input type="date" id="fechaFin">
-        <button class="btn btn-primary" onclick="generarReporte()">Generar Reporte</button>
-        <div class="action-buttons">
-          <button class="btn btn-pdf" onclick="descargarPDF()">📥 Descargar PDF</button>
-          <button class="btn btn-csv" onclick="descargarCSV()">📊 Exportar CSV</button>
+      .tab-content.active {
+        display: block;
+      }
+
+      .filters {
+        background: var(--gray-50);
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .filters input,
+      .filters select {
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--gray-200);
+        border-radius: 6px;
+        font-size: 0.875rem;
+      }
+
+      .filters button {
+        padding: 0.5rem 1rem;
+      }
+
+      .export-btn {
+        background: #10b981;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 500;
+      }
+
+      .export-btn:hover {
+        background: #059669;
+      }
+
+      .resumen-filtro {
+        background: var(--gray-50);
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        font-size: 0.875rem;
+        color: var(--gray-600);
+      }
+
+      .celda-estado {
+        padding: 0.25rem 0.75rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-align: center;
+        display: inline-block;
+      }
+
+      .estado-pagada {
+        background: #dcfce7;
+        color: #166534;
+      }
+
+      .estado-pendiente {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      .estado-activa {
+        background: #e0e7ff;
+        color: #3730a3;
+      }
+
+      .chart-container {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid var(--gray-200);
+        border-radius: 50%;
+        border-top-color: var(--primary);
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .tiempo-promedio {
+        background: #f0f9ff;
+        color: #075985;
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dashboard">
+      <!-- Navbar -->
+      <nav class="navbar">
+        <h1>🅿️ Panel de Administración</h1>
+        <div class="user-info">
+          <span id="nombreUsuario">Cargando...</span>
+          <button class="btn btn-danger btn-sm" id="btnLogout">
+            Cerrar Sesión
+          </button>
+        </div>
+      </nav>
+
+      <!-- Contenido -->
+      <div class="main-content">
+        <!-- Stats generales -->
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-card">
+            <div class="label">Total Sesiones</div>
+            <div class="value" id="totalSesiones">-</div>
+          </div>
+          <div class="stat-card success">
+            <div class="label">Pagadas</div>
+            <div class="value" id="pagadas">-</div>
+          </div>
+          <div class="stat-card warning">
+            <div class="label">Pendientes</div>
+            <div class="value" id="pendientes">-</div>
+          </div>
+          <div class="stat-card primary">
+            <div class="label">Ingresos Totales</div>
+            <div class="value" id="ingresos">-</div>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+          <button class="tab-btn active" onclick="cambiarTab('resumen')">
+            📊 Resumen
+          </button>
+          <button class="tab-btn" onclick="cambiarTab('historial')">
+            📋 Historial
+          </button>
+          <button class="tab-btn" onclick="cambiarTab('reporte')">
+            📈 Reportes
+          </button>
+          <button class="tab-btn" onclick="cambiarTab('espacios')">
+            🅿️ Espacios
+          </button>
+        </div>
+
+        <!-- TAB: RESUMEN -->
+        <div id="resumen" class="tab-content active">
+          <div class="card">
+            <h2>Métricas por Turno</h2>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Turno</th>
+                    <th>Sesiones</th>
+                    <th>Ingresos</th>
+                  </tr>
+                </thead>
+                <tbody id="turnosBody">
+                  <tr>
+                    <td colspan="3" class="loading">Cargando...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: HISTORIAL -->
+        <div id="historial" class="tab-content">
+          <div class="card">
+            <h2>Historial de Sesiones</h2>
+
+            <div class="filters">
+              <input
+                type="date"
+                id="filtroFecha"
+                placeholder="Filtrar por fecha"
+              />
+              <select id="filtroEstado">
+                <option value="">Todos</option>
+                <option value="pagadas">Pagadas</option>
+                <option value="pendientes">Pendientes</option>
+                <option value="activas">Activas</option>
+              </select>
+              <button
+                class="btn btn-primary btn-sm"
+                onclick="cargarHistorial()"
+              >
+                Filtrar
+              </button>
+              <button class="export-btn" onclick="exportarHistorial()">
+                📥 Exportar PDF
+              </button>
+            </div>
+
+            <div id="resumenHistorial" class="resumen-filtro"></div>
+
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID Sesión</th>
+                    <th>Espacio</th>
+                    <th>Turno</th>
+                    <th>Entrada</th>
+                    <th>Salida</th>
+                    <th>Duración</th>
+                    <th>Tarifa</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody id="historialBody">
+                  <tr>
+                    <td colspan="8" class="loading">Cargando...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: REPORTES -->
+        <div id="reporte" class="tab-content">
+          <div class="card">
+            <h2>Reportes por Período</h2>
+
+            <div class="filters">
+              <input
+                type="date"
+                id="reporteFechaInicio"
+                placeholder="Fecha inicio"
+              />
+              <input type="date" id="reporteFechaFin" placeholder="Fecha fin" />
+              <button class="btn btn-primary btn-sm" onclick="cargarReporte()">
+                Generar Reporte
+              </button>
+              <button class="export-btn" onclick="exportarReporte()">
+                📥 Exportar PDF
+              </button>
+            </div>
+
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Turno</th>
+                    <th>Sesiones</th>
+                    <th>Pagadas</th>
+                    <th>Pendientes</th>
+                    <th>Activas</th>
+                    <th>Ingresos Pagados</th>
+                    <th>Ingresos Pendientes</th>
+                    <th>Tiempo Promedio</th>
+                  </tr>
+                </thead>
+                <tbody id="reporteBody">
+                  <tr>
+                    <td colspan="9" class="loading">Cargando...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: ESPACIOS -->
+        <div id="espacios" class="tab-content">
+          <div class="card">
+            <h2>Estado de Espacios</h2>
+            <div id="espaciosGrid" class="espacios-grid">
+              <div class="loading">Cargando espacios...</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Stats Grid -->
-    <div class="stats-grid" id="statsGrid">
-      <div class="stat-card primary">
-        <div class="stat-label">Total Sesiones</div>
-        <div class="stat-value" id="statTotalSesiones">0</div>
-        <div class="stat-subtitle">en el período seleccionado</div>
-      </div>
-      <div class="stat-card success">
-        <div class="stat-label">Sesiones Pagadas</div>
-        <div class="stat-value" id="statPagadas">0</div>
-        <div class="stat-subtitle">completadas y pagadas</div>
-      </div>
-      <div class="stat-card warning">
-        <div class="stat-label">Pendientes de Pago</div>
-        <div class="stat-value" id="statPendientes">0</div>
-        <div class="stat-subtitle">esperando confirmación</div>
-      </div>
-      <div class="stat-card success">
-        <div class="stat-label">Ingresos Totales</div>
-        <div class="stat-value" id="statIngresos">S/ 0.00</div>
-        <div class="stat-subtitle">capital recaudado</div>
-      </div>
-    </div>
+    <script src="js/api.js"></script>
+    <script>
+      let datosHistorial = [];
+      let datosReporte = [];
 
-    <!-- Charts -->
-    <div class="charts-grid">
-      <div class="chart-card">
-        <h3>📈 Ingresos por Turno</h3>
-        <canvas id="chartIngresos"></canvas>
-      </div>
-      <div class="chart-card">
-        <h3>🔄 Distribución de Sesiones</h3>
-        <canvas id="chartDistribucion"></canvas>
-      </div>
-    </div>
+      // ========== Auth ==========
+      (async () => {
+        const usuario = await api.getUsuarioActual();
+        if (!usuario) {
+          window.location.href = "index.html";
+          return;
+        }
+        if (usuario.rol !== "administrador") {
+          window.location.href = "dashboard-encargado.html";
+          return;
+        }
+        document.getElementById("nombreUsuario").textContent =
+          usuario.nombre_usuario;
+        cargarDatos();
+      })();
 
-    <!-- Table -->
-    <div class="table-card">
-      <h3>📋 Detalle de Sesiones</h3>
-      <div class="table-container">
-        <table id="reporteTable">
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Turno</th>
-              <th>Sesiones</th>
-              <th>Pagadas</th>
-              <th>Pendientes</th>
-              <th>Activas</th>
-              <th>Ingresos Pagados</th>
-              <th>Ingresos Pendientes</th>
-              <th>Tiempo Promedio</th>
-            </tr>
-          </thead>
-          <tbody id="reporteBody">
-            <tr><td colspan="9" class="loading"><div class="spinner"></div></td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+      // ========== Cambiar Tab ==========
+      function cambiarTab(tab) {
+        document
+          .querySelectorAll(".tab-content")
+          .forEach((el) => el.classList.remove("active"));
+        document
+          .querySelectorAll(".tab-btn")
+          .forEach((el) => el.classList.remove("active"));
 
-    <!-- PDF Hidden Content -->
-    <div id="pdfContent" style="display: none;">
-      <div class="pdf-content" id="pdfBody"></div>
-    </div>
-  </div>
+        document.getElementById(tab).classList.add("active");
+        event.target.classList.add("active");
 
-  <script>
-    let datosReporte = [];
-    let chartIngresos = null;
-    let chartDistribucion = null;
-
-    // Set default dates
-    window.addEventListener('DOMContentLoaded', () => {
-      const hoy = new Date();
-      const hace30 = new Date(hoy.getTime() - 30 * 24 * 60 * 60 * 1000);
-      
-      document.getElementById('fechaInicio').valueAsDate = hace30;
-      document.getElementById('fechaFin').valueAsDate = hoy;
-      
-      generarReporte();
-    });
-
-    async function generarReporte() {
-      const inicio = document.getElementById('fechaInicio').value;
-      const fin = document.getElementById('fechaFin').value;
-
-      if (!inicio || !fin) {
-        alert('Por favor selecciona ambas fechas');
-        return;
+        if (tab === "historial" && datosHistorial.length === 0)
+          cargarHistorial();
+        if (tab === "reporte" && datosReporte.length === 0) cargarReporte();
+        if (tab === "espacios") cargarEspacios();
       }
 
-      try {
-        // Simular datos (en producción vendrían del API)
-        datosReporte = await obtenerReporte(inicio, fin);
-        renderizarDatos();
-        actualizarGraficos();
-      } catch (error) {
-        console.error('Error:', error);
-        alert('Error al generar reporte');
+      // ========== Cargar Datos Iniciales ==========
+      async function cargarDatos() {
+        await Promise.all([
+          cargarMetricas(),
+          cargarMetricasTurno(),
+          cargarEspacios(),
+        ]);
       }
-    }
 
-    async function obtenerReporte(inicio, fin) {
-      // Datos simulados - reemplazar con llamada real al API
-      const datos = [];
-      const fechaInicio = new Date(inicio);
-      const fechaFin = new Date(fin);
-      
-      for (let d = new Date(fechaInicio); d <= fechaFin; d.setDate(d.getDate() + 1)) {
-        datos.push(
-          {
-            fecha: d.toISOString().split('T')[0],
-            nombre_turno: 'mañana',
-            total_sesiones: Math.floor(Math.random() * 20) + 5,
-            pagadas: Math.floor(Math.random() * 18) + 3,
-            pendientes: Math.floor(Math.random() * 5),
-            activas: Math.floor(Math.random() * 3),
-            ingresos_pagados: Math.random() * 500 + 100,
-            ingresos_pendientes: Math.random() * 200,
-            tiempo_promedio: Math.floor(Math.random() * 120) + 30
-          },
-          {
-            fecha: d.toISOString().split('T')[0],
-            nombre_turno: 'tarde',
-            total_sesiones: Math.floor(Math.random() * 25) + 8,
-            pagadas: Math.floor(Math.random() * 22) + 5,
-            pendientes: Math.floor(Math.random() * 6),
-            activas: Math.floor(Math.random() * 2),
-            ingresos_pagados: Math.random() * 600 + 150,
-            ingresos_pendientes: Math.random() * 250,
-            tiempo_promedio: Math.floor(Math.random() * 140) + 40
+      // ========== Métricas ==========
+      async function cargarMetricas() {
+        try {
+          const m = await api.getMetricas();
+          document.getElementById("totalSesiones").textContent =
+            m.total_sesiones || 0;
+          document.getElementById("pagadas").textContent = m.pagadas || 0;
+          document.getElementById("pendientes").textContent = m.pendientes || 0;
+          document.getElementById("ingresos").textContent = `S/ ${(
+            m.ingresos_totales || 0
+          ).toFixed(2)}`;
+        } catch (error) {
+          console.error("Error al cargar métricas:", error);
+        }
+      }
+
+      // ========== Métricas por Turno ==========
+      async function cargarMetricasTurno() {
+        try {
+          const turnos = await api.getMetricasPorTurno();
+          const tbody = document.getElementById("turnosBody");
+
+          if (turnos.length === 0) {
+            tbody.innerHTML =
+              '<tr><td colspan="3" class="empty-state">Sin datos</td></tr>';
+            return;
           }
-        );
-      }
-      return datos;
-    }
 
-    function renderizarDatos() {
-      if (datosReporte.length === 0) {
-        document.getElementById('reporteBody').innerHTML = 
-          '<tr><td colspan="9" class="empty-state">No hay datos para este período</td></tr>';
-        return;
-      }
-
-      // Calcular totales
-      let totalSesiones = 0, totalPagadas = 0, totalPendientes = 0, totalIngresos = 0;
-      
-      datosReporte.forEach(r => {
-        totalSesiones += r.total_sesiones;
-        totalPagadas += r.pagadas;
-        totalPendientes += r.pendientes;
-        totalIngresos += r.ingresos_pagados;
-      });
-
-      // Actualizar stats
-      document.getElementById('statTotalSesiones').textContent = totalSesiones;
-      document.getElementById('statPagadas').textContent = totalPagadas;
-      document.getElementById('statPendientes').textContent = totalPendientes;
-      document.getElementById('statIngresos').textContent = `S/ ${totalIngresos.toFixed(2)}`;
-
-      // Renderizar tabla
-      const tbody = document.getElementById('reporteBody');
-      tbody.innerHTML = datosReporte.map(r => `
-        <tr>
-          <td><strong>${r.fecha}</strong></td>
-          <td><span style="text-transform: capitalize;">${r.nombre_turno}</span></td>
-          <td>${r.total_sesiones}</td>
-          <td><span class="badge badge-pagada">${r.pagadas}</span></td>
-          <td><span class="badge badge-pendiente">${r.pendientes}</span></td>
-          <td><span class="badge badge-activa">${r.activas}</span></td>
-          <td><strong>S/ ${r.ingresos_pagados.toFixed(2)}</strong></td>
-          <td><strong>S/ ${r.ingresos_pendientes.toFixed(2)}</strong></td>
-          <td><span style="background: #f0f9ff; color: #075985; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 600;">${Math.round(r.tiempo_promedio)} min</span></td>
-        </tr>
-      `).join('');
-    }
-
-    function actualizarGraficos() {
-      // Agrupar por turno
-      const turnoData = {};
-      datosReporte.forEach(r => {
-        if (!turnoData[r.nombre_turno]) {
-          turnoData[r.nombre_turno] = { ingresos: 0, sesiones: 0, pagadas: 0, pendientes: 0 };
+          tbody.innerHTML = turnos
+            .map(
+              (t) => `
+          <tr>
+            <td style="text-transform: capitalize;"><strong>${
+              t.nombre_turno
+            }</strong></td>
+            <td>${t.sesiones || 0}</td>
+            <td><strong>S/ ${(t.ingresos || 0).toFixed(2)}</strong></td>
+          </tr>
+        `
+            )
+            .join("");
+        } catch (error) {
+          console.error("Error al cargar turnos:", error);
         }
-        turnoData[r.nombre_turno].ingresos += r.ingresos_pagados;
-        turnoData[r.nombre_turno].sesiones += r.total_sesiones;
-        turnoData[r.nombre_turno].pagadas += r.pagadas;
-        turnoData[r.nombre_turno].pendientes += r.pendientes;
-      });
-
-      const turnos = Object.keys(turnoData);
-      const ingresos = turnos.map(t => turnoData[t].ingresos);
-
-      // Gráfico 1: Ingresos
-      const ctxIngresos = document.getElementById('chartIngresos').getContext('2d');
-      if (chartIngresos) chartIngresos.destroy();
-      chartIngresos = new Chart(ctxIngresos, {
-        type: 'bar',
-        data: {
-          labels: turnos.map(t => t.charAt(0).toUpperCase() + t.slice(1)),
-          datasets: [{
-            label: 'Ingresos (S/)',
-            data: ingresos,
-            backgroundColor: ['rgba(37, 99, 235, 0.8)', 'rgba(5, 150, 105, 0.8)'],
-            borderColor: ['#2563eb', '#059669'],
-            borderWidth: 2,
-            borderRadius: 8
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { display: false } },
-          scales: { y: { beginAtZero: true } }
-        }
-      });
-
-      // Gráfico 2: Distribución
-      const ctxDist = document.getElementById('chartDistribucion').getContext('2d');
-      if (chartDistribucion) chartDistribucion.destroy();
-      chartDistribucion = new Chart(ctxDist, {
-        type: 'doughnut',
-        data: {
-          labels: ['Pagadas', 'Pendientes'],
-          datasets: [{
-            data: [
-              datosReporte.reduce((a, r) => a + r.pagadas, 0),
-              datosReporte.reduce((a, r) => a + r.pendientes, 0)
-            ],
-            backgroundColor: ['#10b981', '#f59e0b'],
-            borderColor: ['#fff', '#fff'],
-            borderWidth: 3
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { position: 'bottom' } }
-        }
-      });
-    }
-
-    function descargarPDF() {
-      if (datosReporte.length === 0) {
-        alert('Genera un reporte primero');
-        return;
       }
 
-      const element = document.querySelector('.container');
-      const opt = {
-        margin: 10,
-        filename: `reporte_estacionamiento_${new Date().toISOString().split('T')[0]}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { orientation: 'landscape', unit: 'mm', format: 'a4' }
-      };
+      // ========== Historial ==========
+      async function cargarHistorial() {
+        try {
+          const fecha = document.getElementById("filtroFecha").value;
+          const estado = document.getElementById("filtroEstado").value;
 
-      html2pdf().set(opt).from(element).save();
-    }
+          datosHistorial = await api.getHistorial(estado, fecha);
+          const tbody = document.getElementById("historialBody");
 
-    function descargarCSV() {
-      if (datosReporte.length === 0) {
-        alert('Genera un reporte primero');
-        return;
+          if (datosHistorial.length === 0) {
+            tbody.innerHTML =
+              '<tr><td colspan="8" class="empty-state">No hay sesiones</td></tr>';
+            document.getElementById("resumenHistorial").innerHTML = "";
+            return;
+          }
+
+          const pagadas = datosHistorial.filter((s) => s.pago === 1).length;
+          const pendientes = datosHistorial.filter(
+            (s) => s.pago === 0 && s.hora_salida
+          ).length;
+          const activas = datosHistorial.filter((s) => !s.hora_salida).length;
+
+          document.getElementById("resumenHistorial").innerHTML = `
+          ${fecha ? `<strong>Fecha:</strong> ${fecha} | ` : ""}
+          <strong>Total:</strong> ${datosHistorial.length} | 
+          <strong>Pagadas:</strong> ${pagadas} | 
+          <strong>Pendientes:</strong> ${pendientes} | 
+          <strong>Activas:</strong> ${activas}
+        `;
+
+          tbody.innerHTML = datosHistorial
+            .map(
+              (s) => `
+          <tr>
+            <td>#${s.id_sesion}</td>
+            <td>E${s.numero}</td>
+            <td style="text-transform: capitalize;">${s.nombre_turno}</td>
+            <td>${formatearFecha(s.hora_entrada)}</td>
+            <td>${formatearFecha(s.hora_salida)}</td>
+            <td>${calcularDuracion(s.hora_entrada, s.hora_salida)}</td>
+            <td><strong>S/ ${(s.total_tarifa || 0).toFixed(2)}</strong></td>
+            <td>
+              ${
+                s.pago === 1
+                  ? '<span class="celda-estado estado-pagada">✓ Pagada</span>'
+                  : ""
+              }
+              ${
+                s.pago === 0 && s.hora_salida
+                  ? '<span class="celda-estado estado-pendiente">⏳ Pendiente</span>'
+                  : ""
+              }
+              ${
+                !s.hora_salida
+                  ? '<span class="celda-estado estado-activa">▶ Activa</span>'
+                  : ""
+              }
+            </td>
+          </tr>
+        `
+            )
+            .join("");
+        } catch (error) {
+          console.error("Error al cargar historial:", error);
+          document.getElementById("historialBody").innerHTML =
+            '<tr><td colspan="8" class="loading">Error al cargar</td></tr>';
+        }
       }
 
-      const headers = ['Fecha', 'Turno', 'Sesiones', 'Pagadas', 'Pendientes', 'Activas', 'Ingresos Pagados', 'Ingresos Pendientes', 'Tiempo Promedio'];
-      const rows = datosReporte.map(r => [
-        r.fecha,
-        r.nombre_turno,
-        r.total_sesiones,
-        r.pagadas,
-        r.pendientes,
-        r.activas,
-        r.ingresos_pagados.toFixed(2),
-        r.ingresos_pendientes.toFixed(2),
-        r.tiempo_promedio
-      ]);
+      // ========== Reporte ==========
+      async function cargarReporte() {
+        try {
+          const inicio = document.getElementById("reporteFechaInicio").value;
+          const fin = document.getElementById("reporteFechaFin").value;
 
-      const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `reporte_${new Date().toISOString().split('T')[0]}.csv`;
-      a.click();
-    }
-  </script>
-</body>
+          datosReporte = await api.getReporte(inicio, fin);
+          const tbody = document.getElementById("reporteBody");
+
+          if (datosReporte.length === 0) {
+            tbody.innerHTML =
+              '<tr><td colspan="9" class="empty-state">No hay datos para este período de tiempo</td></tr>';
+            return;
+          }
+
+          tbody.innerHTML = datosReporte
+            .map(
+              (r) => `
+          <tr>
+            <td><strong>${r.fecha}</strong></td>
+            <td style="text-transform: capitalize;">${r.nombre_turno}</td>
+            <td>${r.total_sesiones || 0}</td>
+            <td>${r.pagadas || 0}</td>
+            <td>${r.pendientes || 0}</td>
+            <td>${r.activas || 0}</td>
+            <td><strong>S/ ${(r.ingresos_pagados || 0).toFixed(2)}</strong></td>
+            <td><strong>S/ ${(r.ingresos_pendientes || 0).toFixed(
+              2
+            )}</strong></td>
+            <td><span class="tiempo-promedio">${(
+              r.tiempo_promedio || 0
+            ).toFixed(0)} min</span></td>
+          </tr>
+        `
+            )
+            .join("");
+        } catch (error) {
+          console.error("Error al cargar reporte:", error);
+          document.getElementById("reporteBody").innerHTML =
+            '<tr><td colspan="9" class="loading">Error al cargar</td></tr>';
+        }
+      }
+
+      // ========== Espacios ==========
+      async function cargarEspacios() {
+        try {
+          const espacios = await api.getEspacios();
+          const grid = document.getElementById("espaciosGrid");
+
+          const disponibles = espacios.filter(
+            (e) => e.estado === "disponible"
+          ).length;
+          const ocupados = espacios.filter(
+            (e) => e.estado === "ocupado"
+          ).length;
+
+          grid.innerHTML = `
+          <div style="grid-column: 1 / -1; margin-bottom: 1rem; color: var(--gray-600);">
+            <strong>${disponibles}</strong> disponibles · <strong>${ocupados}</strong> ocupados
+          </div>
+          ${espacios
+            .map(
+              (e) => `
+            <div class="espacio ${e.estado}" style="cursor: default;">
+              <span class="numero">${e.numero}</span>
+              <span class="estado">${e.estado}</span>
+            </div>
+          `
+            )
+            .join("")}
+        `;
+        } catch (error) {
+          console.error("Error al cargar espacios:", error);
+        }
+      }
+
+      // ========== Utilidades ==========
+      function formatearFecha(fecha) {
+        if (!fecha) return "-";
+        const d = new Date(fecha);
+        return d.toLocaleString("es-PE", {
+          day: "2-digit",
+          month: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+
+      function calcularDuracion(entrada, salida) {
+        if (!entrada || !salida) return "-";
+        const ms = new Date(salida) - new Date(entrada);
+        const minutos = Math.floor(ms / 60000);
+        const horas = Math.floor(minutos / 60);
+        const mins = minutos % 60;
+        return horas > 0 ? `${horas}h ${mins}m` : `${mins}m`;
+      }
+
+      // ========== Exportar Historial PDF ==========
+      function exportarHistorial() {
+        if (datosHistorial.length === 0) {
+          alert("No hay datos para exportar");
+          return;
+        }
+
+        let html = `
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <style>
+                body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
+                h1 { text-align: center; color: #2563eb; border-bottom: 3px solid #2563eb; padding-bottom: 10px; }
+                .info { text-align: center; margin-bottom: 20px; font-size: 12px; color: #666; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                th { background: #1f2937; color: white; padding: 12px; text-align: left; font-weight: bold; }
+                td { padding: 10px 12px; border-bottom: 1px solid #e0e0e0; }
+                tr:nth-child(even) { background: #f9fafb; }
+                .resumen { margin-top: 30px; padding: 15px; background: #f0f9ff; border-left: 4px solid #2563eb; }
+                .resumen h3 { margin: 0 0 10px 0; color: #1f2937; }
+                .resumen-item { margin: 8px 0; display: flex; justify-content: space-between; }
+                .resumen-item strong { color: #2563eb; }
+              </style>
+            </head>
+            <body>
+              <h1>📋 Historial de Sesiones</h1>
+              <div class="info">
+                <p>Generado: ${new Date().toLocaleString("es-PE")}</p>
+              </div>
+              
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID Sesión</th>
+                    <th>Espacio</th>
+                    <th>Turno</th>
+                    <th>Entrada</th>
+                    <th>Salida</th>
+                    <th>Duración</th>
+                    <th>Tarifa</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+        `;
+
+        let totalTarifa = 0;
+        const pagadas = datosHistorial.filter((s) => s.pago === 1).length;
+        const pendientes = datosHistorial.filter(
+          (s) => s.pago === 0 && s.hora_salida
+        ).length;
+        const activas = datosHistorial.filter((s) => !s.hora_salida).length;
+
+        datosHistorial.forEach((s) => {
+          totalTarifa += s.total_tarifa || 0;
+          const estado = s.pago === 1
+            ? "Pagada"
+            : s.pago === 0 && s.hora_salida
+            ? "Pendiente"
+            : "Activa";
+
+          html += `
+            <tr>
+              <td>#${s.id_sesion}</td>
+              <td>E${s.numero}</td>
+              <td>${s.nombre_turno}</td>
+              <td>${formatearFecha(s.hora_entrada)}</td>
+              <td>${formatearFecha(s.hora_salida)}</td>
+              <td>${calcularDuracion(s.hora_entrada, s.hora_salida)}</td>
+              <td>S/ ${(s.total_tarifa || 0).toFixed(2)}</td>
+              <td>${estado}</td>
+            </tr>
+          `;
+        });
+
+        html += `
+                </tbody>
+              </table>
+
+              <div class="resumen">
+                <h3>📊 Resumen</h3>
+                <div class="resumen-item">
+                  <span>Total de Sesiones:</span>
+                  <strong>${datosHistorial.length}</strong>
+                </div>
+                <div class="resumen-item">
+                  <span>Sesiones Pagadas:</span>
+                  <strong>${pagadas}</strong>
+                </div>
+                <div class="resumen-item">
+                  <span>Sesiones Pendientes:</span>
+                  <strong>${pendientes}</strong>
+                </div>
+                <div class="resumen-item">
+                  <span>Sesiones Activas:</span>
+                  <strong>${activas}</strong>
+                </div>
+                <div class="resumen-item" style="border-top: 1px solid #2563eb; padding-top: 10px; margin-top: 10px;">
+                  <span>Tarifa Total:</span>
+                  <strong>S/ ${totalTarifa.toFixed(2)}</strong>
+                </div>
+              </div>
+            </body>
+          </html>
+        `;
+
+        const ventana = window.open("", "", "width=900,height=700");
+        ventana.document.write(html);
+        ventana.document.close();
+        ventana.print();
+      }
+
+      // ========== Exportar Reporte PDF ==========
+      function exportarReporte() {
+        if (datosReporte.length === 0) {
+          alert("Genera un reporte primero");
+          return;
+        }
+
+        let html = `
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <style>
+                body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
+                h1 { text-align: center; color: #2563eb; border-bottom: 3px solid #2563eb; padding-bottom: 10px; }
+                .info { text-align: center; margin-bottom: 20px; font-size: 12px; color: #666; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                th { background: #1f2937; color: white; padding: 12px; text-align: left; font-weight: bold; }
+                td { padding: 10px 12px; border-bottom: 1px solid #e0e0e0; }
+                tr:nth-child(even) { background: #f9fafb; }
+                .numero { text-align: center; }
+                .moneda { text-align: right; }
+                .turno { text-transform: capitalize; }
+                .resumen { margin-top: 30px; padding: 15px; background: #f0f9ff; border-left: 4px solid #2563eb; }
+                .resumen h3 { margin: 0 0 10px 0; color: #1f2937; }
+                .resumen-item { margin: 8px 0; display: flex; justify-content: space-between; }
+                .resumen-item strong { color: #2563eb; }
+              </style>
+            </head>
+            <body>
+              <h1>📊 Reporte de Estacionamiento</h1>
+              <div class="info">
+                <p>Generado: ${new Date().toLocaleString("es-PE")}</p>
+                <p>Período: ${document.getElementById("reporteFechaInicio").value} al ${document.getElementById("reporteFechaFin").value}</p>
+              </div>
+              
+              <table>
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Turno</th>
+                    <th class="numero">Sesiones</th>
+                    <th class="numero">Pagadas</th>
+                    <th class="numero">Pendientes</th>
+                    <th class="numero">Activas</th>
+                    <th class="moneda">Pagados</th>
+                    <th class="moneda">Pendientes</th>
+                    <th class="numero">T. Prom.</th>
+                  </tr>
+                </thead>
+                <tbody>
+        `;
+
+        let totalSesiones = 0, totalPagadas = 0, totalPendientes = 0, totalActivas = 0;
+        let totalIngresosPagados = 0, totalIngresosPendientes = 0, tiempoPromedio = 0;
+
+        datosReporte.forEach((r) => {
+          totalSesiones += r.total_sesiones || 0;
+          totalPagadas += r.pagadas || 0;
+          totalPendientes += r.pendientes || 0;
+          totalActivas += r.activas || 0;
+          totalIngresosPagados += r.ingresos_pagados || 0;
+          totalIngresosPendientes += r.ingresos_pendientes || 0;
+          tiempoPromedio += r.tiempo_promedio || 0;
+
+          html += `
+            <tr>
+              <td><strong>${r.fecha}</strong></td>
+              <td class="turno">${r.nombre_turno}</td>
+              <td class="numero">${r.total_sesiones || 0}</td>
+              <td class="numero">${r.pagadas || 0}</td>
+              <td class="numero">${r.pendientes || 0}</td>
+              <td class="numero">${r.activas || 0}</td>
+              <td class="moneda">S/ ${(r.ingresos_pagados || 0).toFixed(2)}</td>
+              <td class="moneda">S/ ${(r.ingresos_pendientes || 0).toFixed(2)}</td>
+              <td class="numero">${Math.round(r.tiempo_promedio || 0)} min</td>
+            </tr>
+          `;
+        });
+
+        tiempoPromedio = Math.round(tiempoPromedio / datosReporte.length);
+
+        html += `
+                </tbody>
+              </table>
+
+              <div class="resumen">
+                <h3>📈 Resumen del Período</h3>
+                <div class="resumen-item">
+                  <span>Total de Sesiones:</span>
+                  <strong>${totalSesiones}</strong>
+                </div>
+                <div class="resumen-item">
+                  <span>Sesiones Pagadas:</span>
+                  <strong>${totalPagadas}</strong>
+                </div>
+                <div class="resumen-item">
+                  <span>Sesiones Pendientes:</span>
+                  <strong>${totalPendientes}</strong>
+                </div>
+                <div class="resumen-item">
+                  <span>Sesiones Activas:</span>
+                  <strong>${totalActivas}</strong>
+                </div>
+                <div class="resumen-item" style="border-top: 1px solid #2563eb; padding-top: 10px; margin-top: 10px;">
+                  <span>Ingresos Pagados:</span>
+                  <strong>S/ ${totalIngresosPagados.toFixed(2)}</strong>
+                </div>
+                <div class="resumen-item">
+                  <span>Ingresos Pendientes:</span>
+                  <strong>S/ ${totalIngresosPendientes.toFixed(2)}</strong>
+                </div>
+                <div class="resumen-item">
+                  <span>Tiempo Promedio de Estancia:</span>
+                  <strong>${tiempoPromedio} minutos</strong>
+                </div>
+              </div>
+            </body>
+          </html>
+        `;
+
+        const ventana = window.open("", "", "width=900,height=700");
+        ventana.document.write(html);
+        ventana.document.close();
+        ventana.print();
+      }
+
+      // ========== Logout ==========
+      document
+        .getElementById("btnLogout")
+        .addEventListener("click", async () => {
+          await api.logout();
+          window.location.href = "index.html";
+        });
+
+      // ========== Auto-refresh ==========
+      setInterval(() => {
+        if (
+          document
+            .querySelector(".tab-btn.active")
+            .textContent.includes("Resumen")
+        ) {
+          cargarDatos();
+        }
+      }, 30000);
+    </script>
+  </body>
 </html>
