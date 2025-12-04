@@ -293,7 +293,7 @@
                 <button class="export-btn" onclick="exportarHistorialCSV()">
                   📊 CSV
                 </button>
-                <button class="export-btn" onclick="exportarHistorialPDF()">
+                <button class="export-btn" onclick="exportarHistorialPDF(this)">
                   📄 PDF
                 </button>
               </div>
@@ -344,7 +344,7 @@
                 <button class="export-btn" onclick="exportarReporteCSV()">
                   📊 CSV
                 </button>
-                <button class="export-btn" onclick="exportarReportePDF()">
+                <button class="export-btn" onclick="exportarReportePDF(this)">
                   📄 PDF
                 </button>
               </div>
@@ -693,9 +693,8 @@
         exportarCSV(datosReporte, "reporte.csv");
       }
 
-      async function exportarHistorialPDF() {
+      async function exportarHistorialPDF(btn) {
         try {
-          const btn = event.target;
           btn.classList.add('loading');
           btn.disabled = true;
 
@@ -707,15 +706,13 @@
           console.error("Error descargando PDF:", error);
           mostrarToast("Error al descargar PDF", "error");
         } finally {
-          const btn = event.target;
           btn.classList.remove('loading');
           btn.disabled = false;
         }
       }
 
-      async function exportarReportePDF() {
+      async function exportarReportePDF(btn) {
         try {
-          const btn = event.target;
           btn.classList.add('loading');
           btn.disabled = true;
 
@@ -728,7 +725,6 @@
           console.error("Error descargando PDF:", error);
           mostrarToast("Error al descargar PDF", "error");
         } finally {
-          const btn = event.target;
           btn.classList.remove('loading');
           btn.disabled = false;
         }
